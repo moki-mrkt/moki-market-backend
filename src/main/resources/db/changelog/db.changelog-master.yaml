@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changeset/create-product-table-07012026.yaml
+
+  - include:
+       file: db/changelog/changeset/create-product-images-table-07012026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-users-table-09012026.yaml

@@ -11,9 +11,6 @@ import ua.moki.modules.products.dtos.ProductRequestDTO;
 import ua.moki.modules.products.dtos.ProductResponseDTO;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
@@ -47,32 +44,10 @@ public interface ProductMapper {
     default void updateImages(ProductRequestDTO dto, @MappingTarget Product entity) {
         if (dto.images() == null) return;
 
-        Map<String, ProductImage> existingMap = entity.getImages().stream()
-                .collect(Collectors.toMap(ProductImage::getImageId, Function.identity()));
+        List<ProductImage> incomingImages = dto.images().stream()
+                .map(this::toImageEntity)
+                .toList();
 
-        for (ProductImageDTO productImageDTO : dto.images()) {
-
-            ProductImage image = existingMap.computeIfAbsent(productImageDTO.imageId(), id -> {
-                ProductImage newImg = new ProductImage();
-                newImg.setImageId(id);
-                newImg.setProduct(entity);
-                entity.addImage(newImg);
-                return newImg;
-            });
-
-            image.updateDetails(productImageDTO.isMain(), productImageDTO.sortOrder(), productImageDTO.altText());
-        }
-    }
-
-    @AfterMapping
-    default void linkImages(@MappingTarget Product product, ProductRequestDTO dto) {
-        if (dto.images() != null) {
-            List<ProductImage> imageEntities = dto.images().stream()
-                    .map(this::toImageEntity)
-                    .peek(image -> image.setProduct(product))
-                    .toList();
-
-            product.setImages(imageEntities);
-        }
+        entity.syncImages(incomingImages);
     }
 }

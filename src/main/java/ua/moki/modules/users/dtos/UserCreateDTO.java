@@ -28,15 +28,15 @@ public record UserCreateDTO(
         @Pattern(regexp = "\\+[0-9]+", message = "Phone number is not correct")
         String phoneNumber,
         @NotBlank(message = "Password should not be empty")
-        @Size(min = 10,
+        @Size(min = 8,
                 max = 255,
-                message = "Password must be greater than 10 or invalid password")
+                message = "Password must be greater than 8 or invalid password")
         @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,20}$")
         String password,
         @NotBlank(message = "Confirm password should not be empty")
-        @Size(min = 10,
+        @Size(min = 8,
                 max = 255,
-                message = "Confirm password must be greater than 10 or invalid password")
+                message = "Confirm password must be greater than 8 or invalid password")
         @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,20}$")
         String confirmPassword
 ) implements PasswordConfirmable {

@@ -2,6 +2,7 @@ package ua.moki.infrastructure.storage.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ua.moki.infrastructure.storage.service.FileStorageService;
@@ -16,6 +17,7 @@ public class StorageController {
     private final FileStorageService fileStorageService;
 
     @PostMapping("/upload")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     public ResponseEntity<Map<String, String>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("folder") String folder
@@ -25,11 +27,12 @@ public class StorageController {
         // Повертаємо JSON { "key": "products/123.jpg", "url": "..." }
         return ResponseEntity.ok(Map.of(
                 "key", key,
-                "url", "http://localhost:9000/moki-images/" + key // Для зручності фронта
+                "url", "http://localhost:9000/moki-images/" + key
         ));
     }
 
     @DeleteMapping("/delete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     public ResponseEntity<Void> deleteFile(@RequestParam("key") String key) {
         fileStorageService.delete(key);
         return ResponseEntity.ok().build();

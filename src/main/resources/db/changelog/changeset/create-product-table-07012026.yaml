@@ -94,6 +94,25 @@ databaseChangeLog:
                   defaultValue: "{}"
                   constraints:
                     nullable: false
+  - changeSet:
+      id: add-version-column-to-products
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: products
+                columnName: version
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: '0'
+                  constraints:
+                    nullable: false
 
 
 

@@ -19,7 +19,6 @@ public @interface PasswordMatches {
 
     Class<? extends Payload>[] payload() default {};
 
-    // Назви полів, які ми будемо порівнювати (для гнучкості)
     String passwordField() default "password";
     String confirmPasswordField() default "confirmPassword";
 }

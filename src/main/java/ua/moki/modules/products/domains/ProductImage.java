@@ -29,12 +29,6 @@ public class ProductImage {
     @Column(name = "alt_text")
     private String altText;
 
-    public void updateDetails(boolean isMain, int sortOrder, String altText) {
-        this.isMain = isMain;
-        this.sortOrder = sortOrder;
-        this.altText = altText;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -45,5 +39,11 @@ public class ProductImage {
     @Override
     public int hashCode() {
         return getClass().hashCode();
+    }
+
+    public void updateDetails(boolean isMain, int sortOrder, String altText) {
+        this.isMain = isMain;
+        this.sortOrder = sortOrder;
+        this.altText = altText;
     }
 }

@@ -1,19 +1,21 @@
 package ua.moki.modules.users.controllers;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import ua.moki.modules.users.dtos.UserCreateDTO;
-import ua.moki.modules.users.dtos.UserResponseDTO;
-import ua.moki.modules.users.dtos.UserUpdateDTO;
+import ua.moki.modules.users.dtos.*;
 import ua.moki.modules.users.services.UserService;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.UUID;
 
 @RestController
@@ -22,12 +24,14 @@ public class UserController {
 
     private final UserService userService;
 
+    @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
-
     @PostMapping("/register")
+    @PreAuthorize("permitAll()")
+    @SecurityRequirements()
     public ResponseEntity<UserResponseDTO> register(@RequestBody @Valid UserCreateDTO dto) {
 
         UserResponseDTO userResponseDTO =  userService.createUser(dto);
@@ -43,8 +47,30 @@ public class UserController {
                 .body(userResponseDTO);
     }
 
+    @PostMapping("/managers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDTO> createManager(@RequestBody @Valid UserCreateDTO dto) {
+
+        UserResponseDTO userResponseDTO = userService.createManager(dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponseDTO);
+    }
+
+    @PatchMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponseDTO> updateUser(Principal principal,
+                                                      @Valid @RequestBody UserUpdateDTO userUpdateDTO) {
+
+        UUID userId = UUID.fromString(principal.getName());
+
+        UserResponseDTO updatedUser = userService.updateUser(userId, userUpdateDTO);
+
+        return ResponseEntity.ok(updatedUser);
+    }
+
     @PatchMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID id,
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<UserResponseDTO> updateUserByAdmin(@PathVariable UUID id,
                                                       @RequestBody UserUpdateDTO userUpdateDTO) {
 
         UserResponseDTO updatedUser = userService.updateUser(id, userUpdateDTO);
@@ -52,22 +78,76 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PatchMapping("/email")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponseDTO> changeEmail(Principal principal,
+                                                       @RequestBody @Valid EmailChangeRequestDTO request) {
+
+        UUID userId = UUID.fromString(principal.getName());
+
+        userService.initiateEmailChange(userId, request);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/email/confirm")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Void> confirmChange(@RequestParam String token) {
+        userService.confirmEmailChange(token);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponseDTO> changePassword(Principal principal, @RequestBody @Valid PasswordChangeRequestDTO request) {
+
+        UUID userId = UUID.fromString(principal.getName());
+
+        userService.changePassword(userId, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/block-status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<Void> switchBlockStatusUser(@PathVariable UUID id, @RequestParam boolean isBlocked) {
+
+        userService.updateBlockStatus(id, isBlocked);
+
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
-    //@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<Void> deleteUserByAdmin(@PathVariable UUID id) {
 
         userService.deleteUser(id);
 
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> deleteCurrentAccount(@NotNull Principal principal) {
+        userService.deleteUser(UUID.fromString(principal.getName()));
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id) {
-        UserResponseDTO user =  userService.getActiveUserByPublicId(id);
+        return ResponseEntity.ok(userService.getActiveUserByPublicId(id));
+    }
+
+    @GetMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponseDTO> getUserById(Principal principal) {
+        UserResponseDTO user = userService.getActiveUserByPublicId(UUID.fromString(principal.getName()));
         return ResponseEntity.ok(user);
     }
 
     @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Page<UserResponseDTO>> getAllUsers(
             @RequestParam(required = false) Boolean deleted,
             @RequestParam(defaultValue = "0") int page,

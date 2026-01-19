@@ -14,10 +14,8 @@ import ua.moki.modules.products.enums.ProductCategory;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -30,6 +28,10 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+
+    @Version
+    private Long version;
+
     @Column(nullable = false, length = 32)
     String name;
     @Enumerated(EnumType.STRING)
@@ -62,6 +64,7 @@ public class Product {
     @Column(name = "creation_time", nullable = false, updatable = false)
     OffsetDateTime creationTime;
 
+    @Setter(AccessLevel.NONE)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
 
@@ -79,6 +82,30 @@ public class Product {
     @Override
     public int hashCode() {
         return getClass().hashCode();
+    }
+
+
+    public void syncImages(List<ProductImage> incomingImages) {
+        if (incomingImages == null) return;
+
+        for (ProductImage incoming : incomingImages) {
+            this.images.stream()
+                    .filter(img -> img.getImageId().equals(incoming.getImageId()))
+                    .findFirst()
+                    .ifPresentOrElse(
+                            existing -> existing.updateDetails(incoming.isMain(), incoming.getSortOrder(), incoming.getAltText()),
+                            () -> this.addImage(incoming)
+                    );
+        }
+
+    Set<String> newIds = incomingImages.stream()
+            .map(ProductImage::getImageId)
+            .collect(Collectors.toSet());
+
+    new ArrayList<>(this.images).stream()
+            .filter(img -> !newIds.contains(img.getImageId()))
+            .forEach(this::removeImage);
+
     }
 
     public void addImage(ProductImage image) {
@@ -104,12 +131,4 @@ public class Product {
             this.images = new ArrayList<>(this.images);
         }
     }
-
-    public void setImages(List<ProductImage> images) {
-
-        this.images = new ArrayList<>(images);
-
-        this.images.forEach(img -> img.setProduct(this));
-    }
-
 }

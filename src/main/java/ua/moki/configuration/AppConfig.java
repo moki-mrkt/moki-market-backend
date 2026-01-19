@@ -41,4 +41,9 @@ public class AppConfig {
         return () -> Optional.of(OffsetDateTime.now(clock()));
     }
 
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper().registerModule(new JavaTimeModule());
+    }
+
 }

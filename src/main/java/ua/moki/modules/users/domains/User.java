@@ -28,6 +28,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Version
+    Long version;
+
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
     UUID publicId = UUID.randomUUID();
 
@@ -47,7 +50,7 @@ public class User {
     String imageId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 32)
+    @Column(name = "role_type", nullable = false, length = 32)
     RoleType roleType;
 
     @Column(name = "is_activated")

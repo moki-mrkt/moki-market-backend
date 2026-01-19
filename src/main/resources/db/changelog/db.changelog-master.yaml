@@ -7,3 +7,6 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changeset/create-users-table-09012026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-refresh-token-table-12012026.yaml

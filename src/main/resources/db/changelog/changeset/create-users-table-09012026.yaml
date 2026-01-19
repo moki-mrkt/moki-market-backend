@@ -100,6 +100,12 @@ databaseChangeLog:
   - changeSet:
       id: add-deleted-column-to-users
       author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: users
+                columnName: is_deleted
       changes:
         - addColumn:
             tableName: users
@@ -108,5 +114,24 @@ databaseChangeLog:
                   name: is_deleted
                   type: BOOLEAN
                   defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: add-version-column-to-users
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: users
+                columnName: version
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: '0'
                   constraints:
                     nullable: false

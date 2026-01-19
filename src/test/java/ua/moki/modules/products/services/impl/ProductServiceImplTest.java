@@ -99,7 +99,7 @@ public class ProductServiceImplTest {
         image.setMain(true);
         image.setSortOrder(1);
         image.setProduct(product);
-        product.setImages(List.of(image));
+        product.syncImages(List.of(image));
 
         productRepository.save(product);
         Long existingProductId = product.getId();
@@ -155,7 +155,7 @@ public class ProductServiceImplTest {
         image.setMain(true);
         image.setSortOrder(1);
         image.setProduct(product);
-        product.setImages(List.of(image));
+        product.syncImages(List.of(image));
 
         productRepository.save(product);
         Long existingProductId = product.getId();
@@ -570,7 +570,7 @@ public class ProductServiceImplTest {
         image.setMain(true);
         image.setSortOrder(1);
         image.setProduct(product);
-        product.setImages(List.of(image));
+        product.syncImages(List.of(image));
 
         productRepository.save(product);
         return product;

@@ -27,7 +27,7 @@ class CustomUserDetailsServiceTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private СustomUserDetailsService userDetailsService;
+    private CustomUserDetailsService userDetailsService;
 
     @Test
     @DisplayName("loadUserByUsername returns UserDetails if the user exists and has not been deleted")

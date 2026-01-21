@@ -535,7 +535,6 @@ public class ProductServiceImplTest {
         product.setDescription("Test product");
         product.setPurchasePrice(BigDecimal.valueOf(100));
         product.setDiscount(0);
-        product.setProductCategory(category);
         product.setPrice(BigDecimal.valueOf(100));
         product.setAvailability(ProductAvailability.IN_STOCK);
         product.setInitOfMeasure("шт");

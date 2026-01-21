@@ -10,3 +10,12 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changeset/create-refresh-token-table-12012026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-orders-table-19012026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-carts-table-20012026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-feedbacks-table-20012026.yaml

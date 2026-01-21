@@ -2,6 +2,11 @@ databaseChangeLog:
   - changeSet:
       id: create-product-images-table
       author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: product_images
       changes:
         - createTable:
             tableName: product_images

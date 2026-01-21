@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-feedbacks-table
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: feedbacks
+      changes:
+        - createTable:
+            tableName: feedbacks
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: feedback_type
+                  type: VARCHAR(31)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: comment
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rating
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: answer
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: answered_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: true
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_feedback_user
+                    referencedTableName: users
+                    referencedColumnNames: id
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_feedback_product
+                    referencedTableName: products
+                    referencedColumnNames: id
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false

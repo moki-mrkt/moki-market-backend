@@ -45,6 +45,11 @@ public class ControllerAdvisor {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
+    @ExceptionHandler(OutOfStockException.class)
+    public ProblemDetail handleOutOfStockException(OutOfStockException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ProblemDetail handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());

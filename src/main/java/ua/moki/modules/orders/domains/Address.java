@@ -1,9 +1,9 @@
 package ua.moki.modules.orders.domains;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import lombok.Data;
 
+@Data
 public class Address {
 
     @Column(nullable = false)
@@ -13,5 +13,4 @@ public class Address {
     String street;
     String houseNumber;
     String apartment;
-
 }

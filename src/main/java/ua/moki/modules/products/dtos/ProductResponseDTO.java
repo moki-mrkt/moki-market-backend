@@ -15,6 +15,7 @@ public record ProductResponseDTO(
         String description,
         BigDecimal price,
         BigDecimal rating,
+        Long reviewsCount,
         ProductAvailability availability,
         Integer discount,
         String manufacturerOfTheProduct,

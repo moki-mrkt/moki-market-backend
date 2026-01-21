@@ -43,6 +43,8 @@ public class Product {
     BigDecimal price;
     @Column(precision = 19, scale = 2, nullable = false)
     BigDecimal rating;
+    @Column(name = "reviews_count", nullable = false)
+    private Long reviewsCount = 0L;
     @Enumerated(EnumType.STRING)
     @Column( nullable = false, length = 32)
     ProductAvailability availability;

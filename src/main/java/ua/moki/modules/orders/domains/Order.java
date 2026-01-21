@@ -8,6 +8,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import ua.moki.modules.orders.utils.enums.PaymentStatus;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.orders.utils.enums.DeliveryType;
 import ua.moki.modules.orders.utils.enums.OrderStatus;
@@ -31,6 +32,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Version
+    Long version;
+
     @Column(nullable = false, unique = true)
     UUID publicId = UUID.randomUUID();
 
@@ -52,6 +56,8 @@ public class Order {
     DeliveryType deliveryType;
     @Enumerated(EnumType.STRING)
     PaymentType paymentType;
+    @Enumerated(EnumType.STRING)
+    PaymentStatus paymentStatus;
 
     @Column(nullable = false, precision = 19, scale = 2)
     BigDecimal totalAmount;
@@ -78,11 +84,6 @@ public class Order {
     @Override
     public int hashCode() {
         return getClass().hashCode();
-    }
-
-    public void addItem(OrderItem item) {
-        items.add(item);
-        item.setOrder(this);
     }
 
 }

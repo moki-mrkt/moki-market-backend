@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ua.moki.configuration.AppConfig;
 import ua.moki.configuration.JwtCryptoConfig;
 import ua.moki.configuration.SecurityConfig;
+import ua.moki.configuration.entry_points.JwtAuthenticationEntryPoint;
 import ua.moki.modules.users.dtos.*;
 import ua.moki.modules.users.security.JwtFilter;
 import ua.moki.modules.users.services.UserService;
@@ -41,7 +42,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
-@Import({SecurityConfig.class, AppConfig.class, JwtCryptoConfig.class})
+@Import({SecurityConfig.class, JwtCryptoConfig.class, AppConfig.class,
+        JwtAuthenticationEntryPoint.class})
 class UserControllerTest {
 
     @Autowired
@@ -245,7 +247,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("POST /users/managers - return 403 Forbidden, if user isn't admin")
+    @DisplayName("POST /users/managers - return 401 Unauthorized, if user isn't admin")
     void createManager_returnNot_whenUserNotAdmin() throws Exception {
 
         UserCreateDTO invalidDTO = new UserCreateDTO(
@@ -260,7 +262,7 @@ class UserControllerTest {
         mockMvc.perform(post("/users/managers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).createManager(any());
     }
@@ -327,7 +329,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /users/profile - returns 401/403 if the user is not authenticated")
+    @DisplayName("PATCH /users/profile - returns 401 Unauthorized if the user is not authenticated")
     void updateProfile_shouldReturnUnauthorized_whenUserNotAuthenticated() throws Exception {
 
         UserUpdateDTO updateDTO = new UserUpdateDTO(
@@ -340,7 +342,7 @@ class UserControllerTest {
         mockMvc.perform(patch("/users/profile")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDTO)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -404,7 +406,7 @@ class UserControllerTest {
 
 
     @Test
-    @DisplayName("PATCH /user/{id} - 403 Forbidden if the user is not admin")
+    @DisplayName("PATCH /user/{id} - 401 Unauthorized if the user is not admin")
     void updateUser_throwException_whenUserNotAdmin() throws Exception {
 
         UserCreateDTO requestDTO = new UserCreateDTO(
@@ -419,7 +421,7 @@ class UserControllerTest {
         mockMvc.perform(patch("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -529,7 +531,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /users/email - returns 403 Forbidden if the user is not logged in")
+    @DisplayName("PATCH /users/email - returns 401 Unauthorized if the user is not logged in")
     void changeEmail_shouldReturnForbidden_whenNotAuthenticated() throws Exception {
 
         EmailChangeRequestDTO requestDTO = new EmailChangeRequestDTO(
@@ -540,7 +542,7 @@ class UserControllerTest {
         mockMvc.perform(patch("/users/email")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -692,7 +694,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /users/password - returns 403 Forbidden if the user is not authenticated")
+    @DisplayName("PATCH /users/password - returns 401 Unauthorized if the user is not authenticated")
     void changePassword_shouldReturnForbidden_whenNotAuthenticated() throws Exception {
 
         PasswordChangeRequestDTO requestDTO = new PasswordChangeRequestDTO(
@@ -702,7 +704,7 @@ class UserControllerTest {
         mockMvc.perform(patch("/users/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -757,7 +759,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /users/{id}/block-status - returns 403 Forbidden if not authorized")
+    @DisplayName("PATCH /users/{id}/block-status - returns 401 Unauthorized if not authorized")
     void switchBlockStatus_shouldReturnForbidden_whenNotAuthenticated() throws Exception {
 
         UUID userId = UUID.randomUUID();
@@ -765,7 +767,7 @@ class UserControllerTest {
         mockMvc.perform(patch("/users/{id}/block-status", userId)
                         .param("isBlocked", "true")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).updateBlockStatus(any(), anyBoolean());
     }
@@ -854,11 +856,11 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /profile - 403 Forbidden if user is not logged in")
+    @DisplayName("DELETE /profile - 401 Unauthorized if user is not logged in")
     void deleteCurrentAccount_shouldReturnUnauthorized_whenUserIsAnonymous() throws Exception {
         mockMvc.perform(delete("/users/profile")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).deleteUser(any());
     }
@@ -893,14 +895,14 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /users/{id} - returns 403 Forbidden if the user does not admin")
+    @DisplayName("GET /users/{id} - returns 401 Unauthorized if the user does not admin")
     void getUserById_shouldReturnForbidden_whenUserNotAdmin() throws Exception {
 
         UUID userId = UUID.randomUUID();
 
         mockMvc.perform(get("/users/{id}", userId)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).getActiveUserByPublicId(userId);
     }
@@ -954,12 +956,12 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /users/profile - 403 Forbidden for anonymous user")
+    @DisplayName("GET /users/profile - 401 Unauthorized for anonymous user")
     void getUserById_shouldReturnUnauthorized_whenUserIsAnonymous() throws Exception {
 
         mockMvc.perform(get("/users/profile")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).getActiveUserByPublicId(any());
     }
@@ -1036,7 +1038,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /users/all - 403 Forbidden for anonymous user")
+    @DisplayName("GET /users/all - 401 Unauthorized for anonymous user")
     void getAllUsers_shouldReturnForbidden_whenUserIsAnonymous() throws Exception {
 
         int page = 1;
@@ -1047,7 +1049,7 @@ class UserControllerTest {
                         .param("page", String.valueOf(page))
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).getAllUser(eq(false), eq(PageRequest.of(page, size)));
     }

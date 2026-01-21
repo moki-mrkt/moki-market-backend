@@ -1,0 +1,194 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-order-number-sequence
+      author: KyryloPyvovarov
+      changes:
+        - createSequence:
+            sequenceName: order_number_seq
+            startValue: 100
+            incrementBy: 1
+  - changeSet:
+      id: create-orders-table
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: orders
+      changes:
+        - createTable:
+            tableName: orders
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: public_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: order_number
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_orders_user_id
+                    references: users(id)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: second_name
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: order_status
+                  type: VARCHAR(50)
+                  defaultValue: "NEW"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: delivery_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payment_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payment_status
+                  type: VARCHAR(50)
+                  defaultValue: "PENDING"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_amount
+                  type: DECIMAL(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: city
+                  type: VARCHAR(100)
+              - column:
+                  name: region
+                  type: VARCHAR(100)
+              - column:
+                  name: department
+                  type: VARCHAR(100)
+              - column:
+                  name: street
+                  type: VARCHAR(100)
+              - column:
+                  name: house_number
+                  type: VARCHAR(20)
+              - column:
+                  name: apartment
+                  type: VARCHAR(20)
+              - column:
+                  name: create_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+  - changeSet:
+      id: create-order-items-table
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: order_items
+      changes:
+        - createTable:
+            tableName: order_items
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_items_order_id
+                    references: orders(id)
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_items_product_id
+                    references: products(id)
+              - column:
+                  name: quantity
+                  type: INT
+                  constraints:
+                    nullable: false
+              # Snapshot цін (Історія)
+              - column:
+                  name: base_price_at_purchase
+                  type: DECIMAL(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: discount_percentage_at_purchase
+                  type: INT
+                  defaultValue: 0
+              - column:
+                  name: discount_amount_per_unit
+                  type: DECIMAL(19, 2)
+                  defaultValueNumeric: '0'
+              - column:
+                  name: final_price_per_unit
+                  type: DECIMAL(19, 2)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: add-version-column-to-orders
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: orders
+                columnName: version
+      changes:
+        - addColumn:
+            tableName: orders
+            columns:
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: '0'
+                  constraints:
+                    nullable: false

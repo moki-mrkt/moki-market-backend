@@ -113,6 +113,27 @@ databaseChangeLog:
                   defaultValueNumeric: '0'
                   constraints:
                     nullable: false
+  - changeSet:
+      id: add-reviews-count-column-to-products
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: products
+                columnName: reviews_count
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: reviews_count
+                  type: BIGINT
+                  defaultValueNumeric: '0'
+                  constraints:
+                    nullable: false
+
+
 
 
 

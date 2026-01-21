@@ -10,7 +10,7 @@ import ua.moki.modules.users.repositories.UserRepository;
 
 @Service
 @RequiredArgsConstructor
-public class  СustomUserDetailsService implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 

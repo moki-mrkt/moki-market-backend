@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ua.moki.configuration.AppConfig;
 import ua.moki.configuration.JwtCryptoConfig;
 import ua.moki.configuration.SecurityConfig;
+import ua.moki.configuration.entry_points.JwtAuthenticationEntryPoint;
 import ua.moki.modules.products.dtos.ProductImageDTO;
 import ua.moki.modules.products.dtos.ProductRequestDTO;
 import ua.moki.modules.products.dtos.ProductResponseDTO;
@@ -44,7 +45,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @WebMvcTest(ProductController.class)
-@Import({SecurityConfig.class, AppConfig.class, JwtCryptoConfig.class})
+@Import({SecurityConfig.class, JwtCryptoConfig.class, AppConfig.class,
+        JwtAuthenticationEntryPoint.class})
 public class ProductControllerTest {
 
     @Autowired
@@ -61,7 +63,6 @@ public class ProductControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
 
     @BeforeEach
     void setup() throws Exception {
@@ -100,6 +101,7 @@ public class ProductControllerTest {
                 "Delicious nuts description",
                 BigDecimal.valueOf(100.00),
                 BigDecimal.valueOf(5.0),
+                1L,
                 ProductAvailability.IN_STOCK,
                 0,
                 "Best Manufacturer",
@@ -176,7 +178,7 @@ public class ProductControllerTest {
          mockMvc.perform(post("/products")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidRequestDTO)))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isUnauthorized());
 
         verify(productService, never()).createProduct(any());
 
@@ -211,6 +213,7 @@ public class ProductControllerTest {
                 "Оновлений опис продукту",
                 BigDecimal.valueOf(200.00),
                 BigDecimal.valueOf(4.8),
+                1L,
                 ProductAvailability.IN_STOCK,
                 5,
                 "New Manufacturer",
@@ -295,7 +298,7 @@ public class ProductControllerTest {
         mockMvc.perform(post("/products/{id}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequestDTO)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(productService, never()).updateProduct(any(), any());
 
@@ -386,7 +389,7 @@ public class ProductControllerTest {
         Long productId = 4L;
 
         mockMvc.perform(delete("/products/{id}", productId))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(productService, never()).deleteProduct(anyLong());
     }
@@ -419,6 +422,7 @@ public class ProductControllerTest {
                 "Description",
                 BigDecimal.valueOf(100.00),
                 BigDecimal.valueOf(5.0),
+                1L,
                 ProductAvailability.IN_STOCK,
                 0,
                 "Test Manufacturer",
@@ -475,6 +479,7 @@ public class ProductControllerTest {
                 "Description",
                 BigDecimal.valueOf(100.00),
                 BigDecimal.valueOf(5.0),
+                1L,
                 ProductAvailability.IN_STOCK,
                 0,
                 "Test Manufacturer",
@@ -539,7 +544,7 @@ public class ProductControllerTest {
     }
 
     @Test
-    @DisplayName("GET /products - повертає 403 Forbidden, якщо user is not admin or manager")
+    @DisplayName("GET /products - повертає 401 Unauthorized, якщо user is not admin or manager")
     void getAllProducts_shouldReturnForbidden_whenUserIsNotAdminOrManager() throws Exception {
 
         int page = 0;
@@ -549,7 +554,7 @@ public class ProductControllerTest {
                         .param("page", String.valueOf(page))
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(productService, never()).getAllProducts(anyInt(), anyInt());
     }
@@ -568,6 +573,7 @@ public class ProductControllerTest {
                 "Description",
                 BigDecimal.valueOf(100.00),
                 BigDecimal.valueOf(5.0),
+                1L,
                 ProductAvailability.IN_STOCK,
                 0,
                 "Test Manufacturer",
@@ -642,6 +648,7 @@ public class ProductControllerTest {
                 "Description",
                 BigDecimal.valueOf(100.00),
                 BigDecimal.valueOf(5.0),
+                1L,
                 ProductAvailability.IN_STOCK,
                 0,
                 "Test Manufacturer",
@@ -715,6 +722,7 @@ public class ProductControllerTest {
                 "Description",
                 BigDecimal.valueOf(100.00),
                 BigDecimal.valueOf(5.0),
+                1L,
                 ProductAvailability.IN_STOCK,
                 20,
                 "Test Manufacturer",
@@ -788,6 +796,7 @@ public class ProductControllerTest {
                 "Most popular chips",
                 BigDecimal.valueOf(50.00),
                 BigDecimal.valueOf(4.9),
+                1L,
                 ProductAvailability.IN_STOCK,
                 0,
                 "Chip Factory",

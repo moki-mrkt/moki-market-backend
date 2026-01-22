@@ -1,5 +1,6 @@
 package ua.moki.modules.feedback.controllers;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +89,7 @@ public class FeedbackController {
 
     @GetMapping("/store")
     @PreAuthorize("permitAll()")
+    @SecurityRequirements()
     public ResponseEntity<FeedbackStoreResponseDTO> getFeedbacksByStore(@RequestParam @Min(0) int page,
                                                                         @RequestParam @Min(0) int size) {
 

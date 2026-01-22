@@ -3,6 +3,7 @@ package ua.moki.modules.orders.services.impl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -24,6 +25,7 @@ import ua.moki.modules.orders.utils.mappers.OrderMapper;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.services.ProductService;
+import ua.moki.modules.sender.services.events.TelegramNewOrderEvent;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.services.UserService;
 import ua.moki.modules.users.utils.enums.RoleType;
@@ -45,6 +47,8 @@ public class OrderServiceImpl implements OrderService {
     OrderRepository orderRepository;
     OrderMapper orderMapper;
 
+    ApplicationEventPublisher eventPublisher;
+
     @Override
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO dto) {
@@ -57,9 +61,11 @@ public class OrderServiceImpl implements OrderService {
 
         orderRepository.save(order);
 
-        //notificationService.sendTelegram();
+        OrderResponseDTO orderResponseDTO = orderMapper.toDto(order);
 
-        return orderMapper.toDto(order);
+        eventPublisher.publishEvent(new TelegramNewOrderEvent(orderResponseDTO));
+
+        return orderResponseDTO;
     }
 
     private void enrichOrderWithMeta(Order order, Authentication authentication) {

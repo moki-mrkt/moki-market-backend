@@ -4,12 +4,15 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ua.moki.modules.sender.services.EmailSenderService;
+import ua.moki.modules.sender.services.events.EmailChangeInitiatedEvent;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.dtos.*;
 import ua.moki.modules.users.repositories.UserRepository;
@@ -35,17 +38,21 @@ public class UserServiceImpl implements UserService {
     EmailTokenService emailTokenService;
     PasswordEncoder passwordEncoder;
 
+    ApplicationEventPublisher eventPublisher;
+
     @Autowired
     public UserServiceImpl(UserMapper userMapper,
                            UserRepository userRepository,
                            RefreshTokenService refreshTokenService,
                            EmailTokenService emailTokenService,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           ApplicationEventPublisher eventPublisher) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
         this.refreshTokenService = refreshTokenService;
         this.emailTokenService = emailTokenService;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -144,9 +151,10 @@ public class UserServiceImpl implements UserService {
 
         String token = emailTokenService.generateEmailChangeToken(userId, dto.newEmail());
 
-        //write unit tests
-        // notifcationService.sendEmailAboutChaningEmail()
-        // notificationService.sendEmailConfirmation(dto.newEmail(), token);
+        // TODO write unit tests
+        eventPublisher.publishEvent(
+                new EmailChangeInitiatedEvent(dto.newEmail(), token)
+        );
     }
 
     @Override

@@ -132,8 +132,19 @@ databaseChangeLog:
                   defaultValueNumeric: '0'
                   constraints:
                     nullable: false
-
-
-
-
-
+  - changeSet:
+      id: add-price-with-discount-column
+      author: You
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: price_with_discount
+                  type: NUMERIC(19, 2)
+        - sql:
+            sql: "UPDATE products SET price_with_discount = price - (price * discount / 100.0)"
+        - addNotNullConstraint:
+            tableName: products
+            columnName: price_with_discount
+            columnDataType: NUMERIC(19, 2)

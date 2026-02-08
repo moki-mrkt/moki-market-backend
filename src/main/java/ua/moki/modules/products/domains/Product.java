@@ -13,8 +13,10 @@ import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Entity
@@ -41,6 +43,8 @@ public class Product {
     String description;
     @Column(precision = 19, scale = 2, nullable = false)
     BigDecimal price;
+    @Column(name = "price_with_discount", precision = 19, scale = 2)
+    private BigDecimal priceWithDiscount;
     @Column(precision = 19, scale = 2, nullable = false)
     BigDecimal rating;
     @Column(name = "reviews_count", nullable = false)
@@ -88,49 +92,55 @@ public class Product {
 
 
     public void syncImages(List<ProductImage> incomingImages) {
-        if (incomingImages == null) return;
-
-        for (ProductImage incoming : incomingImages) {
-            this.images.stream()
-                    .filter(img -> img.getImageId().equals(incoming.getImageId()))
-                    .findFirst()
-                    .ifPresentOrElse(
-                            existing -> existing.updateDetails(incoming.isMain(), incoming.getSortOrder(), incoming.getAltText()),
-                            () -> this.addImage(incoming)
-                    );
+        if (incomingImages == null) {
+            this.images.clear();
+            return;
         }
 
-    Set<String> newIds = incomingImages.stream()
-            .map(ProductImage::getImageId)
-            .collect(Collectors.toSet());
+        Map<Long, ProductImage> newImagesMap = incomingImages.stream()
+                .filter(img -> img.getId() != null)
+                .collect(Collectors.toMap(ProductImage::getId, Function.identity()));
 
-    new ArrayList<>(this.images).stream()
-            .filter(img -> !newIds.contains(img.getImageId()))
-            .forEach(this::removeImage);
+        Iterator<ProductImage> iterator = this.images.iterator();
+        while (iterator.hasNext()) {
+            ProductImage existingImage = iterator.next();
 
+            if (existingImage.getId() != null && !newImagesMap.containsKey(existingImage.getId())) {
+                iterator.remove();
+                existingImage.setProduct(null);
+            }
+        }
+
+        for (ProductImage newImage : incomingImages) {
+            if (newImage.getId() == null) {
+                newImage.setProduct(this);
+                this.images.add(newImage);
+            } else {
+                this.images.stream()
+                        .filter(img -> img.getId().equals(newImage.getId()))
+                        .findFirst()
+                        .ifPresent(existing -> {
+                        });
+            }
+        }
     }
 
-    public void addImage(ProductImage image) {
+    @PrePersist
+    @PreUpdate
+    public void updatePriceWithDiscount() {
+        if (this.price == null) {
+            return;
+        }
 
-        ensureMutableImages();
+        if (this.discount == null || this.discount == 0) {
+            this.priceWithDiscount = this.price;
+        } else {
+            BigDecimal discountPercentage = BigDecimal.valueOf(this.discount);
+            BigDecimal discountAmount = this.price
+                    .multiply(discountPercentage)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-        this.images.add(image);
-        image.setProduct(this);
-    }
-
-    public void removeImage(ProductImage image) {
-        ensureMutableImages();
-
-        this.images.remove(image);
-        image.setProduct(null);
-    }
-
-    private void ensureMutableImages() {
-        if (this.images == null) {
-            this.images = new ArrayList<>();
-        } else if (!(this.images instanceof ArrayList)) {
-
-            this.images = new ArrayList<>(this.images);
+            this.priceWithDiscount = this.price.subtract(discountAmount);
         }
     }
 }

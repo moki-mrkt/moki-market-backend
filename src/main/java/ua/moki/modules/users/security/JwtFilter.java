@@ -25,7 +25,6 @@ public class JwtFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final AccessTokenJwsStringDeserializer accessTokenDeserializer;
 
-    @Autowired
     public JwtFilter(HandlerExceptionResolver handlerExceptionResolver,
                      AccessTokenJwsStringDeserializer accessTokenDeserializer) {
         this.handlerExceptionResolver = handlerExceptionResolver;
@@ -40,6 +39,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
+        if(!request.getRequestURI().contains("/actuator/")) {
+            log.info(request.getMethod() + " " + request.getRequestURI());
+        }
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -47,17 +50,16 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             String tokenString = authHeader.substring(7);
+
             Token token = accessTokenDeserializer.apply(tokenString);
 
-
-            if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                authenticateUser(token);
-            }
+            authenticateUser(token);
 
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
             log.error("JWT Authentication failed: {}", e.getMessage());
+
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
 

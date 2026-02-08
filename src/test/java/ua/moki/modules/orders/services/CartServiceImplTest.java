@@ -1,6 +1,5 @@
 package ua.moki.modules.orders.services;
 
-import org.aspectj.lang.annotation.After;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -64,7 +63,7 @@ public class CartServiceImplTest {
 
         testProduct = new Product();
         testProduct.setName("Product");
-        testProduct.setProductCategory(ProductCategory.DRY_FRUITS);
+        testProduct.setProductCategory(ProductCategory.DRIED_FRUITS);
         testProduct.setDescription("Test product");
         testProduct.setPurchasePrice(BigDecimal.valueOf(100));
         testProduct.setDiscount(0);
@@ -171,7 +170,7 @@ public class CartServiceImplTest {
     private Product createAndSaveProduct(BigDecimal price) {
         Product testProduct = new Product();
         testProduct.setName("Test Product");
-        testProduct.setProductCategory(ProductCategory.DRY_FRUITS);
+        testProduct.setProductCategory(ProductCategory.DRIED_FRUITS);
         testProduct.setDescription("Test product");
         testProduct.setPurchasePrice(price);
         testProduct.setDiscount(0);

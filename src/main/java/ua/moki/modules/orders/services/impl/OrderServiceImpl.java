@@ -3,11 +3,13 @@ package ua.moki.modules.orders.services.impl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -55,7 +58,9 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderMapper.toEntity(dto);
 
-        enrichOrderWithMeta(order, SecurityContextHolder.getContext().getAuthentication());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        enrichOrderWithMeta(order, authentication);
 
         processOrderItems(order, dto.cartItems());
 
@@ -70,10 +75,18 @@ public class OrderServiceImpl implements OrderService {
 
     private void enrichOrderWithMeta(Order order, Authentication authentication) {
 
-        if (authentication != null && authentication.isAuthenticated()) {
-            UUID userId = UUID.fromString(authentication.getName());
-            User user = userService.getActiveUserEntityByPublicId(userId);
-            order.setUser(user);
+        System.out.println(authentication);
+
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            try {
+                UUID userId = UUID.fromString(authentication.getName());
+                User user = userService.getActiveUserEntityByPublicId(userId);
+                order.setUser(user);
+            } catch (IllegalArgumentException e) {
+                log.error("User ID is not a valid UUID: {}", authentication.getName());
+            }
         }
 
         Long seqNumber = orderRepository.getNextOrderNumber();
@@ -114,16 +127,15 @@ public class OrderServiceImpl implements OrderService {
 
         validateUserAccess(order, SecurityContextHolder.getContext().getAuthentication());
 
-        if (order.getOrderStatus() != OrderStatus.NEW &&
-                order.getOrderStatus() != OrderStatus.CONFIRMED) {
-            throw new IllegalStateException("Cannot update order details at this stage");
-        }
-
         order.setEmail(dto.email());
         order.setPhoneNumber(dto.phoneNumber());
         order.setFirstName(dto.firstName());
         order.setSecondName(dto.secondName());
         order.setAddress(orderMapper.toAddress(dto.addressDTO()));
+        order.setDeliveryType(dto.deliveryType());
+        order.setPaymentType(dto.paymentType());
+        order.setOrderStatus(dto.orderStatus());
+        order.setPaymentStatus(dto.paymentStatus());
 
         orderRepository.save(order);
 

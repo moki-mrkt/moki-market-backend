@@ -1,20 +1,20 @@
 package ua.moki.modules.products.utils.mappers;
 
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Value;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
 import ua.moki.modules.products.dtos.ProductImageDTO;
+import ua.moki.modules.products.dtos.ProductImageResponseDTO;
 import ua.moki.modules.products.dtos.ProductRequestDTO;
 import ua.moki.modules.products.dtos.ProductResponseDTO;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ProductImageMapper.class})
 public interface ProductMapper {
-
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "creationTime", ignore = true)

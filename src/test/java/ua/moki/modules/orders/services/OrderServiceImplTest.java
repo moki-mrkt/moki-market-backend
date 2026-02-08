@@ -443,7 +443,7 @@ public class OrderServiceImplTest {
     private Product createAndSaveProduct(String name, BigDecimal price, ProductAvailability availability) {
         Product product = new Product();
         product.setName(name);
-        product.setProductCategory(ProductCategory.DRY_FRUITS);
+        product.setProductCategory(ProductCategory.DRIED_FRUITS);
         product.setDescription("Test product");
         product.setPurchasePrice(BigDecimal.valueOf(100));
         product.setDiscount(0);

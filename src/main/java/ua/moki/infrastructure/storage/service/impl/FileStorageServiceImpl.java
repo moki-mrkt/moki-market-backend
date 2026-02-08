@@ -2,18 +2,21 @@ package ua.moki.infrastructure.storage.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.*;
 import ua.moki.infrastructure.storage.service.FileStorageService;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileStorageServiceImpl implements FileStorageService {
@@ -48,6 +51,25 @@ public class FileStorageServiceImpl implements FileStorageService {
         s3Client.deleteObject(DeleteObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
+                .build());
+    }
+
+    @Override
+    public void deleteAllFiles(List<String> keys) {
+        // 1. Перетворюємо список рядків (ключів) у список об'єктів ObjectIdentifier
+        List<ObjectIdentifier> identifiers = keys.stream()
+                .map(key -> ObjectIdentifier.builder().key(key).build())
+                .collect(Collectors.toList());
+
+        // 2. Створюємо об'єкт Delete, який містить ці ідентифікатори
+        Delete delete = Delete.builder()
+                .objects(identifiers)
+                .build();
+
+        // 3. Виконуємо запит на видалення
+        s3Client.deleteObjects(DeleteObjectsRequest.builder()
+                .bucket(bucket)
+                .delete(delete)
                 .build());
     }
 

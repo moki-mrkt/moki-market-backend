@@ -17,8 +17,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 import ua.moki.configuration.entry_points.JwtAuthenticationEntryPoint;
 import ua.moki.modules.users.security.JwtFilter;
+import ua.moki.modules.users.security.jwt.AccessTokenJwsStringDeserializer;
 
 import java.util.List;
 
@@ -53,7 +55,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/email/confirm").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/products").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/orders").permitAll()
+                        .requestMatchers( "/storage").permitAll()
                         .requestMatchers(HttpMethod.GET, "/feedbacks/store").permitAll()
                         .requestMatchers(HttpMethod.POST, "/not/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()

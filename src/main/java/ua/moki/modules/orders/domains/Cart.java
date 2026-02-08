@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import ua.moki.modules.users.domains.User;
 
 import java.time.OffsetDateTime;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Table(name = "carts")
+@EntityListeners(AuditingEntityListener.class)
 public class Cart {
 
     @Id

@@ -12,6 +12,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -21,6 +22,7 @@ import ua.moki.configuration.JwtCryptoConfig;
 import ua.moki.configuration.SecurityConfig;
 import ua.moki.configuration.entry_points.JwtAuthenticationEntryPoint;
 import ua.moki.modules.products.dtos.ProductImageDTO;
+import ua.moki.modules.products.dtos.ProductImageResponseDTO;
 import ua.moki.modules.products.dtos.ProductRequestDTO;
 import ua.moki.modules.products.dtos.ProductResponseDTO;
 import ua.moki.modules.products.enums.ProductAvailability;
@@ -100,17 +102,19 @@ public class ProductControllerTest {
                 ProductCategory.NUTS,
                 "Delicious nuts description",
                 BigDecimal.valueOf(100.00),
+                BigDecimal.valueOf(95.0),
+                BigDecimal.valueOf(95.0),
+                5,
                 BigDecimal.valueOf(5.0),
-                1L,
+                0L,
                 ProductAvailability.IN_STOCK,
-                0,
                 "Best Manufacturer",
                 "Almonds",
                 "кг",
                 1,
                 0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("photo_123", true, 1, "")),
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
                 Map.of("origin", "USA")
         );
 
@@ -212,17 +216,19 @@ public class ProductControllerTest {
                 ProductCategory.NUTS,
                 "Оновлений опис продукту",
                 BigDecimal.valueOf(200.00),
-                BigDecimal.valueOf(4.8),
-                1L,
+                BigDecimal.valueOf(50.0),
+                BigDecimal.valueOf(50.0),
+                50,
+                BigDecimal.valueOf(5.0),
+                0L,
                 ProductAvailability.IN_STOCK,
-                5,
                 "New Manufacturer",
                 "Almonds",
                 "кг",
                 1,
                 0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("photo_123", true, 1, "")),
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
                 Map.of("origin", "USA")
         );
 
@@ -416,23 +422,25 @@ public class ProductControllerTest {
         Long productId = 1L;
 
         ProductResponseDTO responseDTO = new ProductResponseDTO(
-                productId,
+                1L,
                 "Test Product",
                 ProductCategory.NUTS,
-                "Description",
+                "Delicious nuts description",
                 BigDecimal.valueOf(100.00),
+                BigDecimal.valueOf(95.0),
+                BigDecimal.valueOf(95.0),
+                5,
                 BigDecimal.valueOf(5.0),
-                1L,
+                0L,
                 ProductAvailability.IN_STOCK,
-                0,
-                "Test Manufacturer",
-                "Subcategory",
+                "Best Manufacturer",
+                "Almonds",
                 "кг",
                 1,
                 0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("1", true, 1, "")),
-                Map.of("origin", "Ukraine")
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
+                Map.of("origin", "USA")
         );
 
         when(productService.getProductById(productId)).thenReturn(responseDTO);
@@ -476,25 +484,27 @@ public class ProductControllerTest {
                 1L,
                 "Test Product",
                 ProductCategory.NUTS,
-                "Description",
+                "Delicious nuts description",
                 BigDecimal.valueOf(100.00),
+                BigDecimal.valueOf(95.0),
+                BigDecimal.valueOf(95.0),
+                5,
                 BigDecimal.valueOf(5.0),
-                1L,
+                0L,
                 ProductAvailability.IN_STOCK,
-                0,
-                "Test Manufacturer",
-                "Subcategory",
+                "Best Manufacturer",
+                "Almonds",
                 "кг",
                 1,
                 0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("1", true, 1, "")),
-                Map.of("origin", "Ukraine")
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
+                Map.of("origin", "USA")
         );
 
         PageImpl<ProductResponseDTO> productPage = new PageImpl<>(List.of(responseDTO));
 
-        when(productService.getAllProducts(page, size)).thenReturn(productPage);
+        when(productService.getAllProducts("", PageRequest.of(1, 10))).thenReturn(productPage);
 
         mockMvc.perform(get("/products")
                         .param("page", String.valueOf(page))
@@ -507,7 +517,7 @@ public class ProductControllerTest {
                 .andExpect(jsonPath("$.content[0].name", is("Test Product")))
                 .andExpect(jsonPath("$.page.totalElements", is(1)));
 
-        verify(productService).getAllProducts(page, size);
+        verify(productService).getAllProducts("", PageRequest.of(1, 10));
     }
 
     @Test
@@ -517,7 +527,7 @@ public class ProductControllerTest {
         int page = 0;
         int size = 10;
 
-        when(productService.getAllProducts(page, size)).thenReturn(Page.empty());
+        when(productService.getAllProducts("", PageRequest.of(0, 10))).thenReturn(Page.empty());
 
         mockMvc.perform(get("/products")
                         .param("page", String.valueOf(page))
@@ -528,7 +538,7 @@ public class ProductControllerTest {
                 .andExpect(jsonPath("$.content", hasSize(0)))
                 .andExpect(jsonPath("$.page.totalElements", is(0)));
 
-        verify(productService).getAllProducts(page, size);
+        verify(productService).getAllProducts("", PageRequest.of(1, 10));
     }
 
     @Test
@@ -540,7 +550,7 @@ public class ProductControllerTest {
                         .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isBadRequest());
 
-        verify(productService, never()).getAllProducts(anyInt(), anyInt());
+        verify(productService, never()).getAllProducts("", PageRequest.of(0, 10));
     }
 
     @Test
@@ -556,7 +566,7 @@ public class ProductControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
-        verify(productService, never()).getAllProducts(anyInt(), anyInt());
+        verify(productService, never()).getAllProducts("", PageRequest.of(1, 10));
     }
 
     @Test
@@ -572,18 +582,20 @@ public class ProductControllerTest {
                 ProductCategory.NUTS,
                 "Description",
                 BigDecimal.valueOf(100.00),
+                BigDecimal.valueOf(95.0),
+                BigDecimal.valueOf(95.0),
+                5,
                 BigDecimal.valueOf(5.0),
-                1L,
+                0L,
                 ProductAvailability.IN_STOCK,
-                0,
-                "Test Manufacturer",
-                "Subcategory",
+                "Best Manufacturer",
+                "Almonds",
                 "кг",
                 1,
                 0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("1", true, 1, "")),
-                Map.of("origin", "Ukraine")
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
+                Map.of("origin", "USA")
         );
 
         PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
@@ -643,23 +655,26 @@ public class ProductControllerTest {
 
         ProductResponseDTO responseDTO = new ProductResponseDTO(
                 1L,
-                "Test Product",
+                "New Arrival Product",
                 ProductCategory.NUTS,
                 "Description",
                 BigDecimal.valueOf(100.00),
+                BigDecimal.valueOf(95.0),
+                BigDecimal.valueOf(95.0),
+                5,
                 BigDecimal.valueOf(5.0),
-                1L,
+                0L,
                 ProductAvailability.IN_STOCK,
-                0,
-                "Test Manufacturer",
-                "Subcategory",
+                "Best Manufacturer",
+                "Almonds",
                 "кг",
                 1,
                 0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("1", true, 1, "")),
-                Map.of("origin", "Ukraine")
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
+                Map.of("origin", "USA")
         );
+
 
         PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
 
@@ -717,23 +732,26 @@ public class ProductControllerTest {
 
         ProductResponseDTO responseDTO = new ProductResponseDTO(
                 1L,
-                "Test Product",
+                "New Arrival Product",
                 ProductCategory.NUTS,
                 "Description",
                 BigDecimal.valueOf(100.00),
+                BigDecimal.valueOf(95.0),
+                BigDecimal.valueOf(95.0),
+                5,
                 BigDecimal.valueOf(5.0),
-                1L,
+                0L,
                 ProductAvailability.IN_STOCK,
-                20,
-                "Test Manufacturer",
-                "Subcategory",
+                "Best Manufacturer",
+                "Almonds",
                 "кг",
                 1,
                 0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("1", true, 1, "")),
-                Map.of("origin", "Ukraine")
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
+                Map.of("origin", "USA")
         );
+
 
         PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
 
@@ -789,27 +807,29 @@ public class ProductControllerTest {
         int page = 0;
         int size = 10;
 
-        ProductResponseDTO dto = new ProductResponseDTO(
-                50L,
-                "Top Seller Product",
-                ProductCategory.SNACKS_AND_CHIPS,
-                "Most popular chips",
-                BigDecimal.valueOf(50.00),
-                BigDecimal.valueOf(4.9),
+        ProductResponseDTO responseDTO = new ProductResponseDTO(
                 1L,
+                "New Arrival Product",
+                ProductCategory.NUTS,
+                "Description",
+                BigDecimal.valueOf(100.00),
+                BigDecimal.valueOf(95.0),
+                BigDecimal.valueOf(95.0),
+                5,
+                BigDecimal.valueOf(5.0),
+                0L,
                 ProductAvailability.IN_STOCK,
-                0,
-                "Chip Factory",
-                "Chips",
-                "pack",
+                "Best Manufacturer",
+                "Almonds",
+                "кг",
                 1,
-                1000L,
+                0L,
                 OffsetDateTime.now(),
-                List.of(new ProductImageDTO("img_best", true, 0, "url")),
-                Map.of("flavor", "Paprika")
+                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
+                Map.of("origin", "USA")
         );
 
-        PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(dto));
+        PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
 
         when(productService.getBestsellers(page, size)).thenReturn(pageResult);
 

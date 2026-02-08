@@ -51,6 +51,9 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         User user = userService.getActiveUserEntityByPublicId(userId);
 
+        //один юзер не може два рази створити до магазини чи до того самого продукту
+
+
         Feedback feedback = dto.productId() != null ? createProductFeedback(dto.productId()) : new StoreFeedback();
 
         feedback.setUser(user);
@@ -192,6 +195,12 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Transactional(readOnly = true)
     public Page<FeedbackResponseDTO> getFeedbacksAboutStore(int page, int size) {
         return feedbackRepository.findAllByStoreId(PageRequest.of(page, size, Sort.by("createdAt").descending()))
+                .map(feedbackMapper::toDto);
+    }
+
+    @Override
+    public Page<FeedbackResponseDTO> getAllFeedbacks(int page, int size) {
+        return feedbackRepository.findAll(PageRequest.of(page, size, Sort.by("createdAt").descending()))
                 .map(feedbackMapper::toDto);
     }
 

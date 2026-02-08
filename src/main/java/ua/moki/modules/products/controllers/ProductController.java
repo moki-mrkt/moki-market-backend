@@ -5,12 +5,17 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ua.moki.modules.products.dtos.ProductRequestDTO;
 import ua.moki.modules.products.dtos.ProductResponseDTO;
+import ua.moki.modules.products.dtos.ProductSearchRequestDTO;
+import ua.moki.modules.products.dtos.SearchResponse;
 import ua.moki.modules.products.enums.ProductCategory;
 import ua.moki.modules.products.services.ProductService;
 
@@ -28,7 +33,7 @@ public class ProductController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponseDTO> createProduct(@RequestBody @Valid ProductRequestDTO productRequestDTO) {
 
         ProductResponseDTO productResponseDTO = productService.createProduct(productRequestDTO);
@@ -73,8 +78,10 @@ public class ProductController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(@RequestParam @Min(0) int page, @RequestParam @Min(0) int size) {
-        Page<ProductResponseDTO> products = productService.getAllProducts(page, size);
+    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(@RequestParam(required = false) String query,
+                                                                   @PageableDefault(sort = "creationTime",
+                                                                           direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<ProductResponseDTO> products = productService.getAllProducts(query, pageable);
         return ResponseEntity.ok(products);
     }
 
@@ -108,5 +115,13 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
+    @GetMapping("/search")
+    @SecurityRequirements()
+    public ResponseEntity<SearchResponse> search(
+            @ModelAttribute ProductSearchRequestDTO searchRequest,
+            @PageableDefault(sort = "creationTime", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return  ResponseEntity.ok(productService.searchProducts(searchRequest, pageable));
+    }
 
 }

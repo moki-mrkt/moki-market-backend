@@ -14,17 +14,19 @@ public record ProductResponseDTO(
         ProductCategory productCategory,
         String description,
         BigDecimal price,
+        BigDecimal priceWithDiscount,
+        BigDecimal purchasePrice,
+        Integer discount,
         BigDecimal rating,
         Long reviewsCount,
         ProductAvailability availability,
-        Integer discount,
         String manufacturerOfTheProduct,
         String subcategory,
         String initOfMeasure,
         Integer valueOfInitOfMeasure,
         Long salesCount,
         OffsetDateTime creationTime,
-        List<ProductImageDTO> images,
+        List<ProductImageResponseDTO> images,
         Map<String, String> characteristics
 ) {
 }

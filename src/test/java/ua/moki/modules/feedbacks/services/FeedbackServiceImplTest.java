@@ -76,7 +76,7 @@ public class FeedbackServiceImplTest {
 
         testProduct = new Product();
         testProduct.setName("Product");
-        testProduct.setProductCategory(ProductCategory.DRY_FRUITS);
+        testProduct.setProductCategory(ProductCategory.DRIED_FRUITS);
         testProduct.setDescription("Test product");
         testProduct.setPurchasePrice(BigDecimal.valueOf(100));
         testProduct.setDiscount(0);

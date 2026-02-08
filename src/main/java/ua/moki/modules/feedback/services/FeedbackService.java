@@ -22,5 +22,5 @@ public interface FeedbackService {
     Page<FeedbackResponseDTO> getFeedbacksByUserId(UUID userId, int page, int size);
     Page<FeedbackResponseDTO> getFeedbacksByProductId(Long productId, int page, int size);
     Page<FeedbackResponseDTO> getFeedbacksAboutStore(int page, int size);
-
+    Page<FeedbackResponseDTO> getAllFeedbacks(int page, int size);
 }

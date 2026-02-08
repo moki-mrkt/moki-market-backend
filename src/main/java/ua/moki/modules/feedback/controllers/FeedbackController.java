@@ -76,8 +76,9 @@ public class FeedbackController {
         return ResponseEntity.ok(responseDTO);
     }
 
+
     @GetMapping("/product/{productId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<FeedbackResponseDTO>> getFeedbacksByProductId(@PathVariable Long productId,
                                                                              @RequestParam @Min(0) int page,
                                                                              @RequestParam @Min(0) int size) {
@@ -94,6 +95,19 @@ public class FeedbackController {
                                                                         @RequestParam @Min(0) int size) {
 
         Page<FeedbackResponseDTO> responseDTO = feedbackService.getFeedbacksAboutStore(page, size);
+
+        return ResponseEntity.ok(new FeedbackStoreResponseDTO(
+                feedbackService.getAverageRatingForStore(),
+                responseDTO
+        ));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<FeedbackStoreResponseDTO> getAllFeedbacks(@RequestParam @Min(0) int page,
+                                                                    @RequestParam @Min(0) int size) {
+
+        Page<FeedbackResponseDTO> responseDTO = feedbackService.getAllFeedbacks(page, size);
 
         return ResponseEntity.ok(new FeedbackStoreResponseDTO(
                 feedbackService.getAverageRatingForStore(),

@@ -8,6 +8,9 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import ua.moki.modules.users.security.JwtFilter;
+import ua.moki.modules.users.security.jwt.AccessTokenJwsStringDeserializer;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +25,15 @@ public class JwtCryptoConfig {
 
     @Value("${jwt.secret}")
     private String secret;
+
+//    @Bean
+//    public JwtFilter jwtFilter(
+//            HandlerExceptionResolver handlerExceptionResolver,
+//            AccessTokenJwsStringDeserializer accessTokenDeserializer
+//    ) {
+//        return new JwtFilter(handlerExceptionResolver, accessTokenDeserializer);
+//    }
+
 
     @Bean
     public JWEEncrypter jweEncrypter() throws KeyLengthException, NoSuchAlgorithmException {

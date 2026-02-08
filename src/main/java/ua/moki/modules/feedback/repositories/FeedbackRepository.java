@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     Page<Feedback> findAllByUser_PublicId(UUID userId, Pageable pageable);
+    Page<Feedback> findAll(Pageable pageable);
 
     @Query("SELECT f FROM ProductFeedback f WHERE f.product.id = :productId")
     Page<Feedback> findAllByProductId(@Param("productId") Long productId, Pageable pageable);

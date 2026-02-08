@@ -1,5 +1,6 @@
 package ua.moki.infrastructure.storage.controllers;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,8 +17,9 @@ public class StorageController {
 
     private final FileStorageService fileStorageService;
 
-    @PostMapping("/upload")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
+    @PostMapping
+//    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
+    @SecurityRequirements()
     public ResponseEntity<Map<String, String>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("folder") String folder
@@ -31,8 +33,9 @@ public class StorageController {
         ));
     }
 
-    @DeleteMapping("/delete")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
+    @DeleteMapping
+//    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
+    @SecurityRequirements()
     public ResponseEntity<Void> deleteFile(@RequestParam("key") String key) {
         fileStorageService.delete(key);
         return ResponseEntity.ok().build();

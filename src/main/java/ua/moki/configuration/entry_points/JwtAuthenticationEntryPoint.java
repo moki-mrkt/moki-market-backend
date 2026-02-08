@@ -15,7 +15,15 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
 
-        // Повертаємо 401 Unauthorized замість дефолтної поведінки
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token is missing or invalid");
+        System.out.println("Throw ex:" + authException.getMessage());
+
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.getOutputStream().println("""
+                {
+                 "status": "error",
+                 "info": "%s"
+                }
+                """.formatted(authException.getMessage()));
     }
 }

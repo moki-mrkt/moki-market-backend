@@ -7,6 +7,7 @@ public record FeedbackResponseDTO(
         String comment,
         Integer rating,
         String firstNameUser,
+        String secondNameUser,
         String userImageUrl,
         OffsetDateTime createdAt,
         String answer,

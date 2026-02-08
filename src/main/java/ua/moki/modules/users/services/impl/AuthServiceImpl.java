@@ -8,6 +8,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.modules.users.domains.User;
@@ -32,7 +34,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthServiceImpl implements AuthService {
 
-    Duration accesstTokenTtl;
+    Duration accessTokenTtl;
 
     UserRepository userRepository;
     RefreshTokenService refreshTokenService;
@@ -52,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
                            DefaultAccessTokenFactory accessTokenFactory,
                            AccessTokenJwsStringSerializer accessTokenSerializer,
                            RefreshTokenJweStringSerializer refreshTokenSerializer) {
-        this.accesstTokenTtl = accessTokenTtl;
+        this.accessTokenTtl = accessTokenTtl;
         this.userRepository = userRepository;
         this.refreshTokenService = refreshTokenService;
         this.authenticationManager = authenticationManager;
@@ -81,11 +83,28 @@ public class AuthServiceImpl implements AuthService {
 
         User userFromRefreshToken = refreshTokenService.consumeRefreshTokenAndGetUser(request.refreshToken());
 
-        var authentication = new UsernamePasswordAuthenticationToken(
-                userFromRefreshToken.getPublicId().toString(),
-                null,
-                List.of(new SimpleGrantedAuthority(userFromRefreshToken.getRoleType().name()))
-        );
+        var roleName = "ROLE_" + userFromRefreshToken.getRoleType().name();
+
+        UsernamePasswordAuthenticationToken
+                authentication = new UsernamePasswordAuthenticationToken( userFromRefreshToken.getPublicId().toString(), null, List.of(new SimpleGrantedAuthority(roleName)));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+//        Authentication authentication = new UsernamePasswordAuthenticationToken(
+//                userFromRefreshToken.getPublicId().toString(),
+//                null,
+//                List.of(new SimpleGrantedAuthority(roleName))
+//        );
+
+
+//        Authentication authentication = authenticationManager.authenticate(
+//                new UsernamePasswordAuthenticationToken(
+//                        userFromRefreshToken.getPublicId().toString(),
+//                        null,
+//                        List.of(new SimpleGrantedAuthority(roleName))
+//                )
+//        );
+
 
         return issueTokens(authentication, userFromRefreshToken);
     }
@@ -98,7 +117,7 @@ public class AuthServiceImpl implements AuthService {
     private AuthResponseDTO issueTokens(Authentication authentication, User userFromRefreshToken) {
 
         Token newRefreshTokenObj = refreshTokenFactory.apply(authentication);
-        Token newAccessTokenObj = accessTokenFactory.apply(newRefreshTokenObj);
+        Token newAccessTokenObj = accessTokenFactory.apply(authentication);
 
         String newRefreshTokenString = refreshTokenSerializer.apply(newRefreshTokenObj);
         String newAccessTokenString = accessTokenSerializer.apply(newAccessTokenObj);
@@ -107,7 +126,7 @@ public class AuthServiceImpl implements AuthService {
 
         return new AuthResponseDTO(
                 newAccessTokenString,
-                accesstTokenTtl.getSeconds(),
+                accessTokenTtl.getSeconds(),
                 newRefreshTokenString,
                 "Bearer"
         );

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.utility.TestcontainersConfiguration;
 import ua.moki.modules.products.domains.Product;
@@ -106,7 +107,7 @@ public class ProductServiceImplTest {
 
         ProductRequestDTO updateRequest = new ProductRequestDTO(
                 "New name",
-                ProductCategory.DRY_FRUITS,
+                ProductCategory.DRIED_FRUITS,
                 "Description",
                 BigDecimal.valueOf(100.00),
                 ProductAvailability.IN_STOCK,
@@ -127,7 +128,7 @@ public class ProductServiceImplTest {
 
         Product updatedProduct = productRepository.findById(existingProductId).orElseThrow();
         assertThat(updatedProduct.getName()).isEqualTo("New name");
-        assertThat(updatedProduct.getProductCategory()).isEqualTo(ProductCategory.DRY_FRUITS);
+        assertThat(updatedProduct.getProductCategory()).isEqualTo(ProductCategory.DRIED_FRUITS);
         assertThat(updatedProduct.getAvailability()).isEqualTo(ProductAvailability.IN_STOCK);
     }
 
@@ -309,14 +310,14 @@ public class ProductServiceImplTest {
 
         int page = 0;
         int size = 2;
-        Page<ProductResponseDTO> resultPage = productService.getAllProducts(page, size);
+        Page<ProductResponseDTO> resultPage = productService.getAllProducts("", PageRequest.of(page, size));
 
         assertThat(resultPage).isNotNull();
         assertThat(resultPage.getTotalElements()).isEqualTo(5);
         assertThat(resultPage.getTotalPages()).isEqualTo(3);
         assertThat(resultPage.getContent()).hasSize(2);
 
-        Page<ProductResponseDTO> lastPage = productService.getAllProducts(2, size);
+        Page<ProductResponseDTO> lastPage = productService.getAllProducts("", PageRequest.of(2, size));
 
         assertThat(lastPage.getContent()).hasSize(1);
         assertThat(lastPage.getContent().get(0).name()).isEqualTo("Product 5");
@@ -326,7 +327,7 @@ public class ProductServiceImplTest {
     @DisplayName("getAllProducts returns an empty page if there are no records in the database")
     void getAllProducts_shouldReturnEmptyPage_whenDbIsEmpty() {
 
-        Page<ProductResponseDTO> resultPage = productService.getAllProducts(0, 10);
+        Page<ProductResponseDTO> resultPage = productService.getAllProducts("", PageRequest.of(0, 10));
 
         assertThat(resultPage).isNotNull();
         assertThat(resultPage.getContent()).isEmpty();

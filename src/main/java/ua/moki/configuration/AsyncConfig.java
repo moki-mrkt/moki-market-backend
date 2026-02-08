@@ -13,9 +13,9 @@ public class AsyncConfig {
     @Bean(name = "taskExecutor")
     public Executor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(5); // Мінімум потоків
-        executor.setMaxPoolSize(10); // Максимум
-        executor.setQueueCapacity(500); // Черга завдань
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(500);
         executor.setThreadNamePrefix("MokiAsync-");
         executor.initialize();
         return executor;

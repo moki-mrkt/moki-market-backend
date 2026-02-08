@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,13 +54,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
             authenticateUser(token);
 
-            filterChain.doFilter(request, response);
-
         } catch (Exception e) {
             log.error("JWT Authentication failed: {}", e.getMessage());
 
             handlerExceptionResolver.resolveException(request, response, null, e);
+            return;
         }
+
+        filterChain.doFilter(request, response);
 
     }
 

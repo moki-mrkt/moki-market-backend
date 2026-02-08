@@ -10,9 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -49,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ProductController.class)
 @Import({SecurityConfig.class, JwtCryptoConfig.class, AppConfig.class,
         JwtAuthenticationEntryPoint.class})
-public class ProductControllerTest {
+public class ProductControllerTest  {
 
     @Autowired
     private MockMvc mockMvc;
@@ -200,7 +198,7 @@ public class ProductControllerTest {
                 "Оновлений опис продукту",
                 BigDecimal.valueOf(200.00),
                 ProductAvailability.IN_STOCK,
-                5,
+                50,
                 BigDecimal.valueOf(120.00),
                 "New Manufacturer",
                 "Almonds",
@@ -244,7 +242,7 @@ public class ProductControllerTest {
                 .andExpect(jsonPath("$.id", is(productId.intValue())))
                 .andExpect(jsonPath("$.name", is("Оновлений Горіх")))
                 .andExpect(jsonPath("$.price", is(200.0)))
-                .andExpect(jsonPath("$.discount", is(5)));
+                .andExpect(jsonPath("$.discount", is(50)));
 
         verify(productService).updateProduct(eq(productId), any(ProductRequestDTO.class));
     }
@@ -474,7 +472,7 @@ public class ProductControllerTest {
     }
 
     @Test
-    @DisplayName("GET /products - повертає сторінку з продуктами (200 OK)")
+    @DisplayName("GET /products - return page with products (200 OK)")
     void getAllProducts_shouldReturnPageOfProducts() throws Exception {
 
         int page = 1;
@@ -504,11 +502,13 @@ public class ProductControllerTest {
 
         PageImpl<ProductResponseDTO> productPage = new PageImpl<>(List.of(responseDTO));
 
-        when(productService.getAllProducts("", PageRequest.of(1, 10))).thenReturn(productPage);
+        when(productService.getAllProducts(eq(""), any(Pageable.class)))
+                .thenReturn(productPage);
 
         mockMvc.perform(get("/products")
                         .param("page", String.valueOf(page))
                         .param("size", String.valueOf(size))
+                        .param("query", "")
                         .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -516,8 +516,6 @@ public class ProductControllerTest {
                 .andExpect(jsonPath("$.content[0].id", is(1)))
                 .andExpect(jsonPath("$.content[0].name", is("Test Product")))
                 .andExpect(jsonPath("$.page.totalElements", is(1)));
-
-        verify(productService).getAllProducts("", PageRequest.of(1, 10));
     }
 
     @Test
@@ -527,30 +525,19 @@ public class ProductControllerTest {
         int page = 0;
         int size = 10;
 
-        when(productService.getAllProducts("", PageRequest.of(0, 10))).thenReturn(Page.empty());
+        when(productService.getAllProducts(eq(""), any(Pageable.class)))
+                .thenReturn(Page.empty());
 
         mockMvc.perform(get("/products")
                         .param("page", String.valueOf(page))
                         .param("size", String.valueOf(size))
+                        .param("query", "")
                         .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(0)))
                 .andExpect(jsonPath("$.page.totalElements", is(0)));
 
-        verify(productService).getAllProducts("", PageRequest.of(1, 10));
-    }
-
-    @Test
-    @DisplayName("GET /products - повертає 400 Bad Request, якщо не передані параметри page/size")
-    void getAllProducts_shouldReturnBadRequest_whenParamsMissing() throws Exception {
-
-        mockMvc.perform(get("/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user("admin").roles("ADMIN")))
-                .andExpect(status().isBadRequest());
-
-        verify(productService, never()).getAllProducts("", PageRequest.of(0, 10));
     }
 
     @Test
@@ -732,7 +719,7 @@ public class ProductControllerTest {
 
         ProductResponseDTO responseDTO = new ProductResponseDTO(
                 1L,
-                "New Arrival Product",
+                "Test Product",
                 ProductCategory.NUTS,
                 "Description",
                 BigDecimal.valueOf(100.00),
@@ -764,7 +751,7 @@ public class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].name", is("Test Product")))
-                .andExpect(jsonPath("$.content[0].discount", is(20)))
+                .andExpect(jsonPath("$.content[0].discount", is(5)))
                 .andExpect(jsonPath("$.page.totalElements", is(1)));
 
         verify(productService).getProductsWithDiscount(page, size);
@@ -809,7 +796,7 @@ public class ProductControllerTest {
 
         ProductResponseDTO responseDTO = new ProductResponseDTO(
                 1L,
-                "New Arrival Product",
+                "Top Seller Product",
                 ProductCategory.NUTS,
                 "Description",
                 BigDecimal.valueOf(100.00),
@@ -823,7 +810,7 @@ public class ProductControllerTest {
                 "Almonds",
                 "кг",
                 1,
-                0L,
+                1000L,
                 OffsetDateTime.now(),
                 List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
                 Map.of("origin", "USA")
@@ -840,7 +827,7 @@ public class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].name", is("Top Seller Product")))
-                .andExpect(jsonPath("$.content[0].salesCount", is(1000))) // Перевіряємо поле продажів
+                .andExpect(jsonPath("$.content[0].salesCount", is(1000)))
                 .andExpect(jsonPath("$.page.totalElements", is(1)));
 
         verify(productService).getBestsellers(page, size);

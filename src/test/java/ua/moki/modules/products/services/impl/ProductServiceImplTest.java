@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.utility.TestcontainersConfiguration;
+import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
 import ua.moki.modules.products.dtos.ProductImageDTO;
@@ -29,10 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
-@Transactional
-public class ProductServiceImplTest {
+public class ProductServiceImplTest extends BaseIntegrationTest {
 
     @Autowired
     private ProductService productService;

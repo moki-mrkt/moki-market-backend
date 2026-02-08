@@ -90,7 +90,7 @@ public class FeedbackControllerTest {
         UUID userId = UUID.randomUUID();
         FeedbackRequestDTO requestDTO = new FeedbackRequestDTO(1L,"Great product", 5);
         FeedbackResponseDTO responseDTO = new FeedbackResponseDTO(
-                1L, "Great product", 5, "Ivan", "url", OffsetDateTime.now(), null, null
+                1L, "Great product", 5, "Ivan", "Ivan","url", OffsetDateTime.now(), null, null
         );
 
         when(feedbackService.createFeedback(eq(userId), any(FeedbackRequestDTO.class)))
@@ -143,7 +143,7 @@ public class FeedbackControllerTest {
         UUID userId = UUID.randomUUID();
         FeedbackUpdateDTO updateDTO = new FeedbackUpdateDTO("Updated review comment", 4);
         FeedbackResponseDTO responseDTO = new FeedbackResponseDTO(
-                feedbackId, "Updated review comment", 4, "Ivan", "url", OffsetDateTime.now(), null, null
+                feedbackId, "Updated review comment", 4, "Ivan", "Ivan","url", OffsetDateTime.now(), null, null
         );
 
         when(feedbackService.updateFeedback(eq(feedbackId), any(FeedbackUpdateDTO.class), any(Authentication.class)))
@@ -213,7 +213,7 @@ public class FeedbackControllerTest {
         Long feedbackId = 1L;
         FeedbackAnswerDTO answerDTO = new FeedbackAnswerDTO("Дякуємо за ваш відгук!");
         FeedbackResponseDTO responseDTO = new FeedbackResponseDTO(
-                feedbackId, "Коментар користувача", 5, "Ivan", "url",
+                feedbackId, "Коментар користувача", 5, "Ivan", "Ivan","url",
                 OffsetDateTime.now(), "Дякуємо за ваш відгук!", OffsetDateTime.now()
         );
 
@@ -356,7 +356,7 @@ public class FeedbackControllerTest {
         int size = 10;
 
         FeedbackResponseDTO feedbackDto = new FeedbackResponseDTO(
-                1L, "Great service", 5, "Ivan", "url", OffsetDateTime.now(), null, null
+                1L, "Great service", 5, "Ivan", "Ivan", "url", OffsetDateTime.now(), null, null
         );
         Page<FeedbackResponseDTO> pagedResponse = new PageImpl<>(List.of(feedbackDto));
 
@@ -427,7 +427,7 @@ public class FeedbackControllerTest {
         int size = 5;
 
         FeedbackResponseDTO feedbackDto = new FeedbackResponseDTO(
-                1L, "Чудовий товар!", 5, "Олена", "image_url", OffsetDateTime.now(), null, null
+                1L, "Чудовий товар!", 5, "Олена", "Ivan", "image_url", OffsetDateTime.now(), null, null
         );
         Page<FeedbackResponseDTO> pagedResponse = new PageImpl<>(List.of(feedbackDto));
 
@@ -498,7 +498,7 @@ public class FeedbackControllerTest {
         BigDecimal averageRating = new BigDecimal("4.5");
 
         FeedbackResponseDTO feedbackDto = new FeedbackResponseDTO(
-                1L, "Класний магазин", 5, "Марія", "url",
+                1L, "Класний магазин", 5, "Марія", "Ivan", "url",
                 OffsetDateTime.now(), "Дякуємо", OffsetDateTime.now()
         );
         Page<FeedbackResponseDTO> pagedResponse = new PageImpl<>(List.of(feedbackDto));

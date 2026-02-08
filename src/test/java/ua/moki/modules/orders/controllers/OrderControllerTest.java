@@ -175,6 +175,10 @@ public class OrderControllerTest {
                 "not-a-phone",
                 "",
                 "Surname",
+                DeliveryType.NOVA_POSHTA,
+                PaymentType.CARD,
+                OrderStatus.NEW,
+                PaymentStatus.SUCCESS,
                 new AddressDTO("Kyiv", "Kyivskyi", "1", "Street", "1", "1")
         );
 
@@ -431,6 +435,10 @@ public class OrderControllerTest {
                 "+380991112233",
                 "Newname",
                 "Newsurname",
+                DeliveryType.NOVA_POSHTA,
+                PaymentType.CARD,
+                OrderStatus.NEW,
+                PaymentStatus.SUCCESS,
                 address
         );
     }

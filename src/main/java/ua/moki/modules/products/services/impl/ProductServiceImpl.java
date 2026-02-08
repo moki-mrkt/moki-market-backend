@@ -99,7 +99,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = findById(productId);
 
-        if (orderItemRepository.existsByProductId(productId)) {
+        if (product.getSalesCount() > 0) {
 
             product.setAvailability(ProductAvailability.ARCHIVED);
             productRepository.save(product);
@@ -113,7 +113,6 @@ public class ProductServiceImpl implements ProductService {
 
             productRepository.delete(product);
 
-            // 3. Чистимо S3 (асинхронно або тут же, якщо ключів мало)
             if (!imageKeys.isEmpty()) fileStorageService.deleteAllFiles(imageKeys);
         }
     }

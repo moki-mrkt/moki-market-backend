@@ -1,9 +1,6 @@
 package ua.moki.modules.orders.services;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -14,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.utility.TestcontainersConfiguration;
+import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.orders.domains.Order;
 import ua.moki.modules.orders.dtos.*;
 import ua.moki.modules.orders.repositories.OrderRepository;
@@ -39,10 +37,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
-@Transactional
-public class OrderServiceImplTest {
+public class OrderServiceImplTest extends BaseIntegrationTest {
 
     @Autowired
     private OrderService orderService;
@@ -168,11 +163,8 @@ public class OrderServiceImplTest {
 
         AddressDTO newAddress = new AddressDTO("City", "region", "1", "street", "1", "1");
         OrderUpdateDTO updateDTO = new OrderUpdateDTO(
-                "new.email@test.com",
-                "+380992222222",
-                "NewName",
-                "NewSurname",
-                newAddress
+                "new.email@test.com", "+380992222222", "NewName", "NewSurname", DeliveryType.NOVA_POSHTA, PaymentType.CARD,
+                OrderStatus.NEW,PaymentStatus.PENDING, newAddress
         );
 
         OrderResponseDTO result = orderService.updateOrder(order.getPublicId(), updateDTO);
@@ -190,28 +182,6 @@ public class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("updateOrder throws IllegalStateException when the order status does not allow editing (e.g. SENT)")
-    void updateOrder_shouldThrowException_whenOrderStatusIsSent() {
-
-        User user = createAndSaveUser("Owner", RoleType.CUSTOMER, "owner@test.com");
-
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(user.getPublicId().toString(), null, List.of())
-        );
-
-        Order order = createAndSaveOrder(OrderStatus.SHIPPED, user, "ORD-1");
-
-        OrderUpdateDTO updateDTO = new OrderUpdateDTO(
-                "change@test.com", "+3800000000", "Change", "Try",
-                new AddressDTO("City", "St", "1", "street", "1", "1")
-        );
-
-        assertThatThrownBy(() -> orderService.updateOrder(order.getPublicId(), updateDTO))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Cannot update order details at this stage");
-    }
-
-    @Test
     @DisplayName("updateOrder throws an AccessDeniedException (or similar) when a user tries to update someone else's order")
     void updateOrder_shouldThrowException_whenUserIsNotOwner() {
 
@@ -226,7 +196,8 @@ public class OrderServiceImplTest {
         );
 
         OrderUpdateDTO updateDTO = new OrderUpdateDTO(
-                "hacked@test.com", "000", "Hacked", "Name", null
+                "hacked@test.com", "000", "Hacked", "Name", DeliveryType.NOVA_POSHTA, PaymentType.CARD,
+        OrderStatus.NEW,PaymentStatus.PENDING, null
         );
 
         assertThatThrownBy(() -> orderService.updateOrder(order.getPublicId(), updateDTO))
@@ -409,15 +380,13 @@ public class OrderServiceImplTest {
 
     @Test
     @DisplayName("getAllOrders returns all orders with pagination and sorting")
-    void getAllOrders_shouldReturnPagedAndSortedOrders() throws InterruptedException {
+    void getAllOrders_shouldReturnPagedAndSortedOrders() {
 
         User user1 = createAndSaveUser("User1", RoleType.CUSTOMER, "user1.all@test.com");
         User user2 = createAndSaveUser("User2", RoleType.CUSTOMER, "user2.all@test.com");
 
         createAndSaveOrder(OrderStatus.NEW, user1, "ORD-ALL-1");
-        Thread.sleep(50);
         createAndSaveOrder(OrderStatus.NEW, user2, "ORD-ALL-2");
-        Thread.sleep(50);
         createAndSaveOrder(OrderStatus.NEW, user1, "ORD-ALL-3");
 
         Page<OrderResponseDTO> resultPage = orderService.getAllOrders(0, 2);

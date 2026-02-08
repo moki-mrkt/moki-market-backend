@@ -65,8 +65,8 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.access_token", is("access_token_xyz")))
-                .andExpect(jsonPath("$.refresh_token", is("refresh_token_xyz")));
+                .andExpect(jsonPath("$.accessToken", is("access_token_xyz")))
+                .andExpect(jsonPath("$.refreshToken", is("refresh_token_xyz")));
 
         verify(authService).login(any(LoginRequestDTO.class));
     }
@@ -104,7 +104,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.access_token", is("new_access_token")));
+                .andExpect(jsonPath("$.accessToken", is("new_access_token")));
 
         verify(authService).refreshAccessToken(any(RefreshTokenRequestDTO.class));
     }

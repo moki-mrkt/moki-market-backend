@@ -9,15 +9,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.modules.users.domains.User;
-import ua.moki.modules.users.repositories.UserRepository;
-import ua.moki.modules.users.security.Token;
 import ua.moki.modules.users.dtos.auth.AuthResponseDTO;
 import ua.moki.modules.users.dtos.auth.LoginRequestDTO;
 import ua.moki.modules.users.dtos.auth.RefreshTokenRequestDTO;
+import ua.moki.modules.users.repositories.UserRepository;
+import ua.moki.modules.users.security.Token;
 import ua.moki.modules.users.security.factories.DefaultAccessTokenFactory;
 import ua.moki.modules.users.security.factories.DefaultRefreshTokenFactory;
 import ua.moki.modules.users.security.jwt.AccessTokenJwsStringSerializer;

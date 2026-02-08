@@ -33,9 +33,11 @@ class CustomUserDetailsServiceTest {
     @DisplayName("loadUserByUsername returns UserDetails if the user exists and has not been deleted")
     void loadUserByUsername_shouldReturnUserDetails_whenUserExists() {
 
+        UUID userId = UUID.randomUUID();
+
         String email = "test@mail.com";
         User user = new User();
-        user.setPublicId(UUID.randomUUID());
+        user.setPublicId(userId);
         user.setEmail(email);
         user.setPassword("hashed_password");
         user.setRoleType(RoleType.CUSTOMER);
@@ -46,7 +48,7 @@ class CustomUserDetailsServiceTest {
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
         assertThat(userDetails).isNotNull();
-        assertThat(userDetails.getUsername()).isEqualTo(email);
+        assertThat(userDetails.getUsername()).isEqualTo(userId.toString());
         assertThat(userDetails.getPassword()).isEqualTo("hashed_password");
 
         assertThat(userDetails.getAuthorities())

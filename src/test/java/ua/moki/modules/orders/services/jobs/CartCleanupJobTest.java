@@ -1,12 +1,12 @@
 package ua.moki.modules.orders.services.jobs;
 
-import org.junit.jupiter.api.AfterEach;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
+import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.orders.domains.Cart;
 import ua.moki.modules.orders.repositories.CartRepository;
 import ua.moki.modules.users.domains.User;
@@ -18,9 +18,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
-public class CartCleanupJobTest {
+public class CartCleanupJobTest extends BaseIntegrationTest {
 
     @Autowired
     private CartCleanupJob cartCleanupJob;
@@ -30,6 +28,12 @@ public class CartCleanupJobTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private User testUser;
 
@@ -47,20 +51,20 @@ public class CartCleanupJobTest {
         userRepository.save(testUser);
     }
 
-    @AfterEach
-    void tearDown() {
-        cartRepository.deleteAll();
-        userRepository.deleteAll();
-    }
-
-
     @Test
     @DisplayName("Should delete carts updated more than 2 days ago")
     void deleteAbandonedCarts_shouldRemoveOldCarts() {
+
         Cart oldCart = new Cart();
         oldCart.setUser(testUser);
-        oldCart.setUpdatedAt(OffsetDateTime.now().minusDays(3));
-        cartRepository.save(oldCart);
+
+        cartRepository.saveAndFlush(oldCart);
+
+        jdbcTemplate.update("UPDATE carts SET updated_at = ? WHERE id = ?",
+                OffsetDateTime.now().minusDays(3),
+                oldCart.getId());
+
+        entityManager.clear();
 
         assertThat(cartRepository.findAll()).hasSize(1);
 
@@ -86,19 +90,22 @@ public class CartCleanupJobTest {
     @Test
     @DisplayName("Should delete only old carts and keep recent ones")
     void deleteAbandonedCarts_shouldMixedScenario() {
-
         User secondUser = createAndSaveUser();
 
         Cart oldCart = new Cart();
         oldCart.setUser(testUser);
-        oldCart.setUpdatedAt(OffsetDateTime.now().minusDays(5));
+        cartRepository.saveAndFlush(oldCart);
+
+        jdbcTemplate.update("UPDATE carts SET updated_at = ? WHERE id = ?",
+                OffsetDateTime.now().minusDays(5),
+                oldCart.getId());
 
         Cart recentCart = new Cart();
         recentCart.setUser(secondUser);
-        recentCart.setUpdatedAt(OffsetDateTime.now());
 
-        cartRepository.save(oldCart);
-        cartRepository.save(recentCart);
+        cartRepository.saveAndFlush(recentCart);
+
+        entityManager.clear();
 
         cartCleanupJob.deleteAbandonedCarts();
 

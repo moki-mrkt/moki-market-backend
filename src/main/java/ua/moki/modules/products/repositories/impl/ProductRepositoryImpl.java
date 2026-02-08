@@ -8,7 +8,6 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 import ua.moki.modules.products.domains.Product;
-import ua.moki.modules.products.repositories.ProductRepository;
 import ua.moki.modules.products.repositories.ProductRepositoryCustom;
 
 import java.util.List;

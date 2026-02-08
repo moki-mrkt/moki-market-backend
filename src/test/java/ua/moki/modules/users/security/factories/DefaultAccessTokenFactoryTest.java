@@ -3,6 +3,10 @@ package ua.moki.modules.users.security.factories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.config.core.GrantedAuthorityDefaults;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import ua.moki.modules.users.security.Token;
 
 import java.time.Duration;
@@ -13,6 +17,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.assertj.core.api.BDDAssertions.within;
+import static org.mockito.Mockito.*;
 
 public class DefaultAccessTokenFactoryTest {
 
@@ -29,19 +34,21 @@ public class DefaultAccessTokenFactoryTest {
     @DisplayName("apply creates a new token with the correct TTL and copies the subject")
     void apply_shouldCreateTokenWithCorrectTtlAndSubject() {
 
-        UUID userId = UUID.randomUUID();
-        List<String> authorities = List.of("ROLE_USER", "ROLE_MANAGER");
+        List<String> listOfStringsOfAuthorities = List.of("ROLE_USER", "ROLE_MANAGER");
 
-        Token refreshToken = new Token(
-                userId.toString(),
-                authorities,
-                Instant.now().minus(1, ChronoUnit.HOURS),
-                Instant.now().plus(1, ChronoUnit.DAYS)
-        );
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"),
+                new SimpleGrantedAuthority("ROLE_MANAGER"));
 
-        Token accessToken = factory.apply(refreshToken);
+        String userId = "user-uuid-123";
+        Authentication authentication = mock(Authentication.class);
 
-        assertThat(accessToken.subject()).isEqualTo(userId.toString());
+        when(authentication.getName()).thenReturn(userId);
+
+        doReturn(authorities).when(authentication).getAuthorities();
+
+        Token accessToken = factory.apply(authentication);
+
+        assertThat(accessToken.subject()).isEqualTo(userId);
 
         assertThat(accessToken.createdAt())
                 .isCloseTo(Instant.now(), within(1, ChronoUnit.SECONDS));
@@ -49,30 +56,27 @@ public class DefaultAccessTokenFactoryTest {
         assertThat(accessToken.expiresAt())
                 .isCloseTo(Instant.now().plus(tokenTtl), within(1, ChronoUnit.SECONDS));
 
-        assertThat(accessToken.authorities()).containsExactlyElementsOf(authorities);
+        assertThat(accessToken.authorities()).containsExactlyElementsOf(listOfStringsOfAuthorities);
     }
 
     @Test
     @DisplayName("apply filters technical rights (JWT REFRESH, JWT LOGOUT)")
     void apply_shouldFilterRestrictedAuthorities() {
 
-        String userId = UUID.randomUUID().toString();
 
-        List<String> mixedAuthorities = List.of(
-                "ROLE_ADMIN",
-                "JWT_REFRESH",
-                "ROLE_CUSTOMER",
-                "JWT_LOGOUT"
-        );
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"),
+                new SimpleGrantedAuthority("ROLE_CUSTOMER"));
 
-        Token refreshToken = new Token(
-                userId,
-                mixedAuthorities,
-                Instant.now(),
-                Instant.now().plus(1, ChronoUnit.DAYS)
-        );
 
-        Token accessToken = factory.apply(refreshToken);
+        String userId = "user-uuid-123";
+        Authentication authentication = mock(Authentication.class);
+
+        when(authentication.getName()).thenReturn(userId);
+
+        doReturn(authorities).when(authentication).getAuthorities();
+
+
+        Token accessToken = factory.apply(authentication);
 
         assertThat(accessToken.authorities())
                 .hasSize(2)
@@ -84,15 +88,16 @@ public class DefaultAccessTokenFactoryTest {
     @DisplayName("apply correctly processes the list without technical rights")
     void apply_shouldKeepAuthorities_whenNoRestrictedPresent() {
 
-        List<String> authorities = List.of("ROLE_USER");
-        Token refreshToken = new Token(
-                UUID.randomUUID().toString(),
-                authorities,
-                Instant.now(),
-                Instant.now()
-        );
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
 
-        Token accessToken = factory.apply(refreshToken);
+        String userId = "user-uuid-123";
+        Authentication authentication = mock(Authentication.class);
+
+        when(authentication.getName()).thenReturn(userId);
+
+        doReturn(authorities).when(authentication).getAuthorities();
+
+        Token accessToken = factory.apply(authentication);
 
         assertThat(accessToken.authorities()).containsExactly("ROLE_USER");
     }
@@ -101,14 +106,14 @@ public class DefaultAccessTokenFactoryTest {
     @DisplayName("apply correctly handles an empty list of permissions")
     void apply_shouldHandleEmptyAuthorities() {
 
-        Token refreshToken = new Token(
-                UUID.randomUUID().toString(),
-                List.of(),
-                Instant.now(),
-                Instant.now()
-        );
+        String userId = "user-uuid-123";
+        Authentication authentication = mock(Authentication.class);
 
-        Token accessToken = factory.apply(refreshToken);
+        when(authentication.getName()).thenReturn(userId);
+
+        doReturn(List.of()).when(authentication).getAuthorities();
+
+        Token accessToken = factory.apply(authentication);
 
         assertThat(accessToken.authorities()).isEmpty();
     }

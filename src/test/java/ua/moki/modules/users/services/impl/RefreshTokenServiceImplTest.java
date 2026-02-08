@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.utility.TestcontainersConfiguration;
+import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.users.domains.RefreshToken;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.repositories.RefreshTokenRepository;
@@ -25,10 +26,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
-@Transactional
-class RefreshTokenServiceImplTest {
+class RefreshTokenServiceImplTest extends BaseIntegrationTest {
 
     @Autowired
     private RefreshTokenService refreshTokenService;
@@ -46,8 +44,6 @@ class RefreshTokenServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        refreshTokenRepository.deleteAll();
-        userRepository.deleteAll();
 
         testUser = new User();
         testUser.setPublicId(UUID.randomUUID());

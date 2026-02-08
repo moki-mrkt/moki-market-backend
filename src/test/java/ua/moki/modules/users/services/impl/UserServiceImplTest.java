@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.utility.TestcontainersConfiguration;
+import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.users.domains.RefreshToken;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.dtos.PasswordChangeRequestDTO;
@@ -32,10 +33,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
-@Transactional
-public class UserServiceImplTest {
+public class UserServiceImplTest extends BaseIntegrationTest {
 
     @Autowired
     private UserService userService;
@@ -51,12 +49,6 @@ public class UserServiceImplTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @BeforeEach
-    void setUp() {
-        refreshTokenRepository.deleteAll();
-        userRepository.deleteAll();
-    }
 
     @Test
     @DisplayName("createUser successfully saves the user to the DB with a hashed password and the CUSTOMER role")

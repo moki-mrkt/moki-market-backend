@@ -1,13 +1,9 @@
 package ua.moki.modules.users.services.jobs;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.utility.TestcontainersConfiguration;
+import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.users.domains.RefreshToken;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.repositories.RefreshTokenRepository;
@@ -20,10 +16,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Import(TestcontainersConfiguration.class) // Використовуємо твою конфігурацію Testcontainers
-@Transactional
-public class TokenCleanupJobTest {
+public class TokenCleanupJobTest extends BaseIntegrationTest {
 
     @Autowired
     private TokenCleanupJob tokenCleanupJob;
@@ -34,11 +27,6 @@ public class TokenCleanupJobTest {
     @Autowired
     private UserRepository userRepository;
 
-    @BeforeEach
-    void setUp() {
-        refreshTokenRepository.deleteAll();
-        userRepository.deleteAll();
-    }
 
     @Test
     @DisplayName("deleteExpiredTokens deletes ONLY expired tokens")

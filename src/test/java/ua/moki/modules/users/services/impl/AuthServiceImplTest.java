@@ -85,7 +85,7 @@ class AuthServiceImplTest {
                 .thenReturn(Optional.of(user));
 
         when(refreshTokenFactory.apply(authentication)).thenReturn(mockRefreshTokenObj);
-        when(accessTokenFactory.apply(mockRefreshTokenObj)).thenReturn(mockAccessTokenObj);
+        when(accessTokenFactory.apply(authentication)).thenReturn(mockAccessTokenObj);
         when(refreshTokenSerializer.apply(mockRefreshTokenObj)).thenReturn(refreshTokenString);
         when(accessTokenSerializer.apply(mockAccessTokenObj)).thenReturn(accessTokenString);
 
@@ -145,7 +145,7 @@ class AuthServiceImplTest {
         when(refreshTokenService.consumeRefreshTokenAndGetUser(oldRefreshTokenString)).thenReturn(user);
 
         when(refreshTokenFactory.apply(any(Authentication.class))).thenReturn(mockRefreshTokenObj);
-        when(accessTokenFactory.apply(mockRefreshTokenObj)).thenReturn(mockAccessTokenObj);
+        when(accessTokenFactory.apply(any(Authentication.class))).thenReturn(mockAccessTokenObj);
 
         when(refreshTokenSerializer.apply(mockRefreshTokenObj)).thenReturn(newRefreshTokenString);
         when(accessTokenSerializer.apply(mockAccessTokenObj)).thenReturn(newAccessTokenString);

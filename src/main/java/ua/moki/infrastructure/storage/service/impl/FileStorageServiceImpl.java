@@ -56,17 +56,15 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public void deleteAllFiles(List<String> keys) {
-        // 1. Перетворюємо список рядків (ключів) у список об'єктів ObjectIdentifier
+
         List<ObjectIdentifier> identifiers = keys.stream()
                 .map(key -> ObjectIdentifier.builder().key(key).build())
                 .collect(Collectors.toList());
 
-        // 2. Створюємо об'єкт Delete, який містить ці ідентифікатори
         Delete delete = Delete.builder()
                 .objects(identifiers)
                 .build();
 
-        // 3. Виконуємо запит на видалення
         s3Client.deleteObjects(DeleteObjectsRequest.builder()
                 .bucket(bucket)
                 .delete(delete)

@@ -16,7 +16,7 @@ import java.net.URI;
 public class S3Config {
 
     @Value("${s3.url}")
-    private String url; // http://localhost:9000 для локалки
+    private String url;
 
     @Value("${s3.accessKey}")
     private String accessKey;
@@ -35,10 +35,8 @@ public class S3Config {
                 .region(Region.US_EAST_1)
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKey, secretKey.trim())))
-                // forcePathStyle = true критично для MinIO (http://host/bucket),
-                // але для Cloudflare/AWS краще false (http://bucket.host)
                 .serviceConfiguration(S3Configuration.builder()
-                        .pathStyleAccessEnabled(true)
+                        .pathStyleAccessEnabled(false)
                         .checksumValidationEnabled(false)
                         .build())
                 .build();

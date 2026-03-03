@@ -135,3 +135,28 @@ databaseChangeLog:
                   defaultValueNumeric: '0'
                   constraints:
                     nullable: false
+  - changeSet:
+      id: add-delivery-info-to-users
+      author: KyryloPyvovarov
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: delivery_city
+                  type: varchar(128)
+              - column:
+                  name: post_office
+                  type: varchar(128)
+              - column:
+                  name: delivery_type
+                  type: varchar(32)
+              - column:
+                  name: region
+                  type: varchar(128)
+              - column:
+                  name: delivery_street
+                  type: varchar(128)
+              - column:
+                  name: delivery_house
+                  type: varchar(128)

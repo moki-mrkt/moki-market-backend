@@ -11,19 +11,20 @@ import java.util.Map;
 
 public record ProductRequestDTO(
         @NotBlank(message = "name of product should not be empty")
-        @Size(min = 2, max = 32,
-                message = "name of product must be greater than 2 and less than 32")
+        @Size(min = 2, max = 64,
+                message = "name of product must be greater than 2 and less than 64"
+        )
         String name,
         ProductCategory productCategory,
-        @Size(min = 2, max = 1000,
-                message = "description of product must be greater than 2 and less than 1000")
+        @Size(min = 2, max = 5000,
+                message = "description of product must be greater than 2 and less than 5000")
         String description,
         @Min(0)
         @Max(100000)
         BigDecimal price,
         ProductAvailability availability,
-        @Min(0)
-        @Max(99)
+        @Min(value = 0, message = "Discount must be positive")
+        @Max(value = 99, message = "Discount must be less or equal than 99")
         Integer discount,
         @Min(0)
         @Max(100000)

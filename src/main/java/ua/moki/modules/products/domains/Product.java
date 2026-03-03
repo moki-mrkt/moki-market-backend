@@ -34,7 +34,7 @@ public class Product {
     @Version
     private Long version;
 
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 64)
     String name;
     @Enumerated(EnumType.STRING)
     @Column(name = "product_category", nullable = false, length = 32)

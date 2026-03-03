@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Підтвердження реєстрації</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style type="text/css">
+        /* Ці стилі спрацюють ТІЛЬКИ на великих екранах (комп'ютерах) */
+        @media only screen and (min-width: 601px) {
+            .content-table { width: 600px !important; }
+            .main-h2 { font-size: 42px !important; }
+            .main-p { font-size: 20px !important; }
+            .activate-img { width: 300px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Nunito', Arial, sans-serif;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f4f4f4">
+    <tr>
+        <td align="center" style="padding: 10px;">
+
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" class="content-table" style="background-color: #FCF9EC; border-radius: 20px; overflow: hidden; max-width: 600px;">
+
+                <tr>
+                    <td align="left" bgcolor="#FDF4C4" style="padding: 10px 20px; height: 60px;">
+                        <a href="https://moki.com.ua" target="_blank">
+                            <img src="https://pub-95900dacf4ce4ccc98044f09ae9d2fa6.r2.dev/email/68d60021-467e-4d40-9f23-39484dde389f.png"
+                                 alt="MOKI" width="80" style="display: block; border: 0;" />
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 30px 20px 10px 20px;">
+                        <h2 class="main-h2" style="font-size: 20px; font-weight: 700; color: #0E2CA4; margin: 0; line-height: 1.2;">
+                            Доброго здоровʼя!
+                        </h2>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 10px 20px 20px 20px;">
+                        <p class="main-p" style="color: #7B8CC6; font-size: 12px; line-height: 1.4; margin: 0;">
+                            Щоб завершити зміну електронної пошти, підтвердіть свою адресу за посиланням нижче
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 10px 0 30px 0;">
+                        <a th:href="@{http://localhost:5173/confirm-email(token=${token})}" target="_blank" style="text-decoration: none;">
+                            <img class="activate-img"
+                                 src="https://pub-95900dacf4ce4ccc98044f09ae9d2fa6.r2.dev/email/2b880be5-3e25-4988-b533-9680cd48cdc9.png"
+                                 alt="Підтвердити" width="240" style="display: block; border: 0; max-width: 80%; height: auto;" />
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td height="50" bgcolor="#FDF4C4" style="border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

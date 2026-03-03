@@ -12,9 +12,11 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.Random;
 
 @Configuration
 @EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
@@ -44,6 +46,11 @@ public class AppConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper().registerModule(new JavaTimeModule());
+    }
+
+    @Bean
+    public SecureRandom random() {
+        return new SecureRandom();
     }
 
 }

@@ -39,7 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if(!request.getRequestURI().contains("/actuator/")) {
-            log.info(request.getMethod() + " " + request.getRequestURI());
+            log.info("{} {}", request.getMethod(), request.getRequestURI());
         }
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {

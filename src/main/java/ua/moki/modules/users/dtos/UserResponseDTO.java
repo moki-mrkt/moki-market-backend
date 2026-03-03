@@ -1,5 +1,9 @@
 package ua.moki.modules.users.dtos;
 
+import ua.moki.modules.orders.utils.enums.DeliveryType;
+
+import java.time.LocalDate;
+
 public record UserResponseDTO(
         String id,
         String firstName,
@@ -7,6 +11,8 @@ public record UserResponseDTO(
         String email,
         String phoneNumber,
         String imageUrl,
-        String roleType
+        String roleType,
+        LocalDate dateOfBirth,
+        DeliveryInfoDTO deliveryInfo
 ) {
 }

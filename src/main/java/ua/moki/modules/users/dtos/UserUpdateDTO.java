@@ -21,7 +21,7 @@ public record UserUpdateDTO(
         @Size(max = 13)
         @Pattern(regexp = "\\+[0-9]+", message = "Phone number is not correct")
         String phoneNumber,
-        // @NotBlank(message = "Date of birth should not be empty")
-        LocalDate dateOfBirth
+        LocalDate dateOfBirth,
+        DeliveryInfoDTO deliveryInfo
 ) {
 }

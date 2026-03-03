@@ -19,7 +19,6 @@ public class StorageController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
-    @SecurityRequirements()
     public ResponseEntity<Map<String, String>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("folder") String folder
@@ -34,7 +33,6 @@ public class StorageController {
 
     @DeleteMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
-    @SecurityRequirements()
     public ResponseEntity<Void> deleteFile(@RequestParam("key") String key) {
         fileStorageService.delete(key);
         return ResponseEntity.ok().build();

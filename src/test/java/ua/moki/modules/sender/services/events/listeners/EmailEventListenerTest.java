@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ua.moki.modules.sender.services.EmailSenderService;
 import ua.moki.modules.sender.services.events.EmailChangeInitiatedEvent;
+import ua.moki.modules.sender.services.listeners.EmailEventListener;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;

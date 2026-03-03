@@ -47,6 +47,9 @@ public class User {
     @Column(nullable = false)
     String password;
 
+    @Embedded
+    UserDeliveryInfo deliveryInfo;
+
     String imageId;
 
     @Enumerated(EnumType.STRING)

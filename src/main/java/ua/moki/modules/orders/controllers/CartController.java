@@ -23,7 +23,7 @@ public class CartController {
     }
 
     @PostMapping("/add")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<CartResponseDTO> addToCart(Principal principal,
                                                      @RequestParam Long productId,
                                                      @RequestParam @Min(1) int quantity) {
@@ -33,7 +33,7 @@ public class CartController {
     }
 
     @DeleteMapping("/clear")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<Void> clearCart(Principal principal) {
         UUID userId = UUID.fromString(principal.getName());
         cartService.clearCart(userId);

@@ -57,7 +57,7 @@ public class UserController {
     }
 
     @PatchMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<UserResponseDTO> updateUser(Principal principal,
                                                       @Valid @RequestBody UserUpdateDTO userUpdateDTO) {
 
@@ -68,44 +68,23 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PatchMapping("/profile/avatar")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<UserResponseDTO> updateAvatar(Principal principal,
+                                                        @RequestBody AvatarUpdateDTO dto) {
+        UUID userId = UUID.fromString(principal.getName());
+        UserResponseDTO updatedUser = userService.updateAvatar(userId, dto);
+        return ResponseEntity.ok(updatedUser);
+    }
+
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<UserResponseDTO> updateUserByAdmin(@PathVariable UUID id,
-                                                      @RequestBody UserUpdateDTO userUpdateDTO) {
+                                                             @RequestBody UserUpdateDTO userUpdateDTO) {
 
         UserResponseDTO updatedUser = userService.updateUser(id, userUpdateDTO);
 
         return ResponseEntity.ok(updatedUser);
-    }
-
-    @PatchMapping("/email")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponseDTO> changeEmail(Principal principal,
-                                                       @RequestBody @Valid EmailChangeRequestDTO request) {
-
-        UUID userId = UUID.fromString(principal.getName());
-
-        userService.initiateEmailChange(userId, request);
-
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/email/confirm")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<Void> confirmChange(@RequestParam String token) {
-        userService.confirmEmailChange(token);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/password")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponseDTO> changePassword(Principal principal, @RequestBody @Valid PasswordChangeRequestDTO request) {
-
-        UUID userId = UUID.fromString(principal.getName());
-
-        userService.changePassword(userId, request);
-
-        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/block-status")
@@ -127,7 +106,7 @@ public class UserController {
     }
 
     @DeleteMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<Void> deleteCurrentAccount(@NotNull Principal principal) {
         userService.deleteUser(UUID.fromString(principal.getName()));
         return ResponseEntity.noContent().build();
@@ -140,7 +119,7 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<UserResponseDTO> getUserById(Principal principal) {
         UserResponseDTO user = userService.getActiveUserByPublicId(UUID.fromString(principal.getName()));
         return ResponseEntity.ok(user);

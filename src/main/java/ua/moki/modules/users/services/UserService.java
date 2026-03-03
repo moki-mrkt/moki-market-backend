@@ -12,10 +12,8 @@ public interface UserService {
     UserResponseDTO createUser(UserCreateDTO userCreateDTO);
     UserResponseDTO createManager(UserCreateDTO userCreateDTO);
     UserResponseDTO updateUser(UUID publicId, UserUpdateDTO userUpdateDTO);
+    UserResponseDTO updateAvatar(UUID publicId, AvatarUpdateDTO avatarUpdateDTO);
     void updateBlockStatus(UUID publicId, boolean isBlocked);
-    void initiateEmailChange(UUID userId, EmailChangeRequestDTO dto);
-    void confirmEmailChange(String token);
-    void changePassword(UUID userId, PasswordChangeRequestDTO dto);
     void deleteUser(UUID publicId);
     User getUserById(Long id);
     User getActiveUserEntityByPublicId(UUID publicId);

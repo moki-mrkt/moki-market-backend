@@ -49,9 +49,13 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/password-reset/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/password-reset/initiate").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users/email/confirm").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/profile/email/confirm").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/users/activation").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/orders").permitAll()

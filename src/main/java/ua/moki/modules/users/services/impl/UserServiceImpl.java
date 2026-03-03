@@ -7,16 +7,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ua.moki.modules.sender.services.EmailSenderService;
-import ua.moki.modules.sender.services.events.EmailChangeInitiatedEvent;
+import ua.moki.infrastructure.storage.service.FileStorageService;
+import ua.moki.modules.sender.services.events.VerifyEmailEvent;
 import ua.moki.modules.users.domains.User;
-import ua.moki.modules.users.dtos.*;
+import ua.moki.modules.users.domains.UserDeliveryInfo;
+import ua.moki.modules.users.dtos.AvatarUpdateDTO;
+import ua.moki.modules.users.dtos.UserCreateDTO;
+import ua.moki.modules.users.dtos.UserResponseDTO;
+import ua.moki.modules.users.dtos.UserUpdateDTO;
 import ua.moki.modules.users.repositories.UserRepository;
-import ua.moki.modules.users.services.EmailTokenService;
+import ua.moki.modules.users.services.tokens.ActivationTokenService;
+import ua.moki.modules.users.services.tokens.EmailTokenService;
 import ua.moki.modules.users.services.RefreshTokenService;
 import ua.moki.modules.users.services.UserService;
 import ua.moki.modules.users.utils.enums.RoleType;
@@ -35,8 +39,9 @@ public class UserServiceImpl implements UserService {
     UserMapper userMapper;
     UserRepository userRepository;
     RefreshTokenService refreshTokenService;
-    EmailTokenService emailTokenService;
+    ActivationTokenService activationTokenService;
     PasswordEncoder passwordEncoder;
+    FileStorageService fileStorageService;
 
     ApplicationEventPublisher eventPublisher;
 
@@ -45,13 +50,15 @@ public class UserServiceImpl implements UserService {
                            UserRepository userRepository,
                            RefreshTokenService refreshTokenService,
                            EmailTokenService emailTokenService,
-                           PasswordEncoder passwordEncoder,
+                           ActivationTokenService activationTokenService,
+                           PasswordEncoder passwordEncoder, FileStorageService fileStorageService,
                            ApplicationEventPublisher eventPublisher) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
         this.refreshTokenService = refreshTokenService;
-        this.emailTokenService = emailTokenService;
+        this.activationTokenService = activationTokenService;
         this.passwordEncoder = passwordEncoder;
+        this.fileStorageService = fileStorageService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -64,6 +71,12 @@ public class UserServiceImpl implements UserService {
         user.setRoleType(RoleType.CUSTOMER);
 
         User savedUser = userRepository.save(user);
+
+        String token = activationTokenService.generateToken(savedUser);
+
+        eventPublisher.publishEvent(
+                new VerifyEmailEvent(user.getEmail(), token)
+        );
 
         return userMapper.toResponseDTO(savedUser);
     }
@@ -105,7 +118,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDTO updateUser(UUID publicId, UserUpdateDTO userUpdateDTO) {
 
-        User user = this.getActiveUserEntityByPublicId(publicId);
+        User user = getActiveUserEntityByPublicId(publicId);
+
+        if (user.getDeliveryInfo() == null) {
+            user.setDeliveryInfo(new UserDeliveryInfo());
+        }
 
         userMapper.updateUserFromDto(userUpdateDTO, user);
 
@@ -116,13 +133,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserResponseDTO updateAvatar(UUID publicId, AvatarUpdateDTO avatarUpdateDTO) {
+
+        User user = getActiveUserEntityByPublicId(publicId);
+
+        String oldImageId = user.getImageId();
+
+        user.setImageId(avatarUpdateDTO.imageId());
+        User savedUser = userRepository.save(user);
+
+        if (oldImageId != null && !oldImageId.equals(avatarUpdateDTO.imageId())) {
+                fileStorageService.delete(oldImageId);
+        }
+
+        return userMapper.toResponseDTO(savedUser);
+    }
+
+    @Override
+    @Transactional
     public void updateBlockStatus(UUID publicId, boolean isBlocked) {
 
         User user = getActiveUserEntityByPublicId(publicId);
 
-        if (user.isBlocked() == isBlocked) {
-            return;
-        }
+        if (user.isBlocked() == isBlocked) return;
 
         user.setBlocked(isBlocked);
         userRepository.save(user);
@@ -133,66 +166,6 @@ public class UserServiceImpl implements UserService {
         } else {
             log.info("User {} was UNBLOCKED.", publicId);
         }
-    }
-
-    @Override
-    @Transactional
-    public void initiateEmailChange(UUID userId, EmailChangeRequestDTO dto) {
-
-        User user = getActiveUserEntityByPublicId(userId);
-
-        if (!passwordEncoder.matches(dto.currentPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Wrong password");
-        }
-
-        if (userRepository.existsByEmail(dto.newEmail())) {
-            throw new UserAlreadyExistsException("Email already taken");
-        }
-
-        String token = emailTokenService.generateEmailChangeToken(userId, dto.newEmail());
-
-        // TODO write unit tests
-        eventPublisher.publishEvent(
-                new EmailChangeInitiatedEvent(dto.newEmail(), token)
-        );
-    }
-
-    @Override
-    @Transactional
-    public void confirmEmailChange(String token) {
-
-        var claims = emailTokenService.parseToken(token);
-
-        User user = getActiveUserEntityByPublicId(claims.userId());
-
-        if (userRepository.existsByEmail(claims.newEmail())) {
-            throw new UserAlreadyExistsException("Email already taken");
-        }
-
-        user.setEmail(claims.newEmail());
-        userRepository.save(user);
-
-        refreshTokenService.deleteAllForUser(user.getId());
-    }
-
-    @Override
-    @Transactional
-    public void changePassword(UUID userId, PasswordChangeRequestDTO dto) {
-
-        User user = getActiveUserEntityByPublicId(userId);
-
-        if (!passwordEncoder.matches(dto.currentPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid current password");
-        }
-
-        if (passwordEncoder.matches(dto.password(), user.getPassword())) {
-            throw new IllegalArgumentException("New password cannot be the same as old password");
-        }
-
-        user.setPassword(passwordEncoder.encode(dto.password()));
-        userRepository.save(user);
-
-        refreshTokenService.deleteAllForUser(user.getId());
     }
 
     @Override

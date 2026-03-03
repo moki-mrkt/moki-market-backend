@@ -27,7 +27,7 @@ public class FeedbackController {
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<FeedbackResponseDTO> createFeedback(Principal principal, @RequestBody @Valid FeedbackRequestDTO dto) {
 
         FeedbackResponseDTO responseDTO = feedbackService.createFeedback(UUID.fromString(principal.getName()), dto);
@@ -35,7 +35,7 @@ public class FeedbackController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<FeedbackResponseDTO> updateFeedback(Authentication authentication,
                                                               @PathVariable Long id,
                                                               @RequestBody @Valid FeedbackUpdateDTO dto) {
@@ -45,7 +45,7 @@ public class FeedbackController {
     }
 
     @PatchMapping("/{id}/answer")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<FeedbackResponseDTO> addAnswerToFeedback(Authentication authentication,
                                                               @PathVariable Long id,
                                                               @RequestBody @Valid FeedbackAnswerDTO dto) {
@@ -57,7 +57,7 @@ public class FeedbackController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<Void> deleteFeedback(@PathVariable Long id, Authentication authentication) {
 
         feedbackService.deleteFeedback(id, authentication);
@@ -66,7 +66,7 @@ public class FeedbackController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<Page<FeedbackResponseDTO>> getFeedbacksByUserId(Principal principal,
                                                                @RequestParam @Min(0) int page,
                                                                @RequestParam @Min(0) int size) {

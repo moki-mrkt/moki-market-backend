@@ -10,7 +10,7 @@ import ua.moki.modules.products.dtos.ProductImageResponseDTO;
 @Mapper(componentModel = "spring")
 public abstract class ProductImageMapper {
 
-    @Value("${minio.external-url}")
+    @Value("${s3.public_url}")
     protected String storageUrl;
 
     @Mapping(target = "imageUrl", source = "imageId", qualifiedByName = "mapToUrl")

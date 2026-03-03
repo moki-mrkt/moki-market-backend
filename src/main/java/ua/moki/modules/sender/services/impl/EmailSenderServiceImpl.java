@@ -44,10 +44,110 @@ public class EmailSenderServiceImpl implements EmailSenderService {
                 paramMap.put("token", verificationLink);
                 context.setVariables(paramMap);
 
-                String content = templateEngine.process("sample", context);
+                String content = templateEngine.process("verifyEmail", context);
 
                 helper.setText(content, true);
             mailSender.send(helper.getMimeMessage());
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            log.error("Failed to send email", e);
+        }
+    }
+
+    @Override
+    public void sendEmailChangeMessage(String userEmail, String token) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+
+            helper.setTo(userEmail);
+            helper.setFrom(String.valueOf(new InternetAddress(email, "Moki Market")));
+            helper.setSubject("Підтвердження зміни пошти");
+
+            Context context = new Context(Locale.getDefault());
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("token", token);
+            context.setVariables(paramMap);
+
+            String content = templateEngine.process("changeEmail", context);
+
+            helper.setText(content, true);
+            mailSender.send(helper.getMimeMessage());
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            log.error("Failed to send email", e);
+        }
+    }
+
+    @Override
+    public void sendSecurityAlertEmailMessage(String userOldEmail, String userNewEmail) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+
+            helper.setTo(userOldEmail);
+            helper.setFrom(String.valueOf(new InternetAddress(email, "Moki Market")));
+            helper.setSubject("Попередження про зміну пошти");
+
+            Context context = new Context(Locale.getDefault());
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("newEmail", userNewEmail);
+            context.setVariables(paramMap);
+
+
+            String content = templateEngine.process("securityAlertChangeEmail", context);
+
+            helper.setText(content, true);
+            mailSender.send(helper.getMimeMessage());
+
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            log.error("Failed to send email", e);
+        }
+    }
+
+    @Override
+    public void sendForgotPasswordMessage(String userEmail, String otpCode) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+
+            helper.setTo(userEmail);
+            helper.setFrom(String.valueOf(new InternetAddress(email, "Moki Market")));
+            helper.setSubject("Зміна пароля");
+
+            Context context = new Context(Locale.getDefault());
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("otpCode", otpCode);
+            context.setVariables(paramMap);
+
+
+            String content = templateEngine.process("forgotPassword", context);
+
+            helper.setText(content, true);
+            mailSender.send(helper.getMimeMessage());
+
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            log.error("Failed to send email", e);
+        }
+    }
+
+    @Override
+    public void sendSecurityAlertPasswordChangedEmailMessage(String userEmail) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+
+            helper.setTo(userEmail);
+            helper.setFrom(String.valueOf(new InternetAddress(email, "Moki Market")));
+            helper.setSubject("Попередження про зміну пароля");
+
+            Context context = new Context(Locale.getDefault());
+            Map<String, Object> paramMap = new HashMap<>();
+            context.setVariables(paramMap);
+
+            String content = templateEngine.process("securityAlertPasswordChanged", context);
+
+            helper.setText(content, true);
+            mailSender.send(helper.getMimeMessage());
+
         } catch (MessagingException | UnsupportedEncodingException e) {
             log.error("Failed to send email", e);
         }

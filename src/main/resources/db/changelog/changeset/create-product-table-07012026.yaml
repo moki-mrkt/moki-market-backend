@@ -148,3 +148,11 @@ databaseChangeLog:
             tableName: products
             columnName: price_with_discount
             columnDataType: NUMERIC(19, 2)
+  - changeSet:
+      id: update-size-for-name-of-product
+      author: KyryloPyvovarov
+      changes:
+        - modifyDataType:
+            tableName: products
+            columnName: name
+            newDataType: VARCHAR(64)

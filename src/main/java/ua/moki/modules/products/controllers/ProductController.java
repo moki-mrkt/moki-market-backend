@@ -70,6 +70,7 @@ public class ProductController {
 
     @GetMapping("/{id}")
     @SecurityRequirements()
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long id) {
 
         ProductResponseDTO product =  productService.getProductById(id);
@@ -87,6 +88,7 @@ public class ProductController {
 
     @GetMapping("/new")
     @SecurityRequirements()
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<ProductResponseDTO>> getNewProducts(@RequestParam @Min(0) int page, @RequestParam @Min(0) int size) {
         Page<ProductResponseDTO> products = productService.getNewProducts(page, size);
         return ResponseEntity.ok(products);
@@ -94,6 +96,7 @@ public class ProductController {
 
     @GetMapping("/category/{category}")
     @SecurityRequirements()
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<ProductResponseDTO>> getAllProductsByCategory(@PathVariable ProductCategory category,
                                                                           @RequestParam @Min(0) int page,
                                                                           @RequestParam @Min(0) int size) {
@@ -102,6 +105,7 @@ public class ProductController {
     }
 
     @GetMapping("/discount")
+    @PreAuthorize("permitAll()")
     @SecurityRequirements()
     public ResponseEntity<Page<ProductResponseDTO>> getProductsWithDiscount(@RequestParam @Min(0) int page, @RequestParam @Min(0) int size) {
         Page<ProductResponseDTO> products = productService.getProductsWithDiscount(page, size);
@@ -110,6 +114,7 @@ public class ProductController {
 
     @GetMapping("/bestsellers")
     @SecurityRequirements()
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<ProductResponseDTO>> getBestsellers(@RequestParam @Min(0) int page, @RequestParam @Min(0) int size) {
         Page<ProductResponseDTO> products = productService.getBestsellers(page, size);
         return ResponseEntity.ok(products);
@@ -117,6 +122,7 @@ public class ProductController {
 
     @GetMapping("/search")
     @SecurityRequirements()
+    @PreAuthorize("permitAll()")
     public ResponseEntity<SearchResponse> search(
             @ModelAttribute ProductSearchRequestDTO searchRequest,
             @PageableDefault(sort = "creationTime", direction = Sort.Direction.DESC) Pageable pageable

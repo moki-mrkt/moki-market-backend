@@ -46,7 +46,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable UUID id,
                                                         @RequestBody @Valid OrderUpdateDTO dto) {
 
@@ -56,7 +56,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/cancel/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<Void> cancelOrder(@PathVariable UUID id) {
 
         orderService.cancelOrder(id);
@@ -65,14 +65,14 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<OrderResponseDTO> getOrderById(@PathVariable UUID id) {
         OrderResponseDTO order = orderService.getOrderByPublicId(id);
         return ResponseEntity.ok(order);
     }
 
     @GetMapping("/user")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
     public ResponseEntity<Page<OrderResponseDTO>> getOrdersByUser(Principal principal,
                                                            @RequestParam @Min(0) int page,
                                                            @RequestParam @Min(0) int size) {

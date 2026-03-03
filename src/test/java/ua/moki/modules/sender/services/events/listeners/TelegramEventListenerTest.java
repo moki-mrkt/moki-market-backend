@@ -10,6 +10,7 @@ import ua.moki.modules.orders.dtos.OrderResponseDTO;
 
 import ua.moki.modules.sender.services.TelegramSenderService;
 import ua.moki.modules.sender.services.events.TelegramNewOrderEvent;
+import ua.moki.modules.sender.services.listeners.TelegramEventListener;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;

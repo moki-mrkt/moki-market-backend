@@ -1,4 +1,4 @@
-package ua.moki.modules.sender.services.events.listeners;
+package ua.moki.modules.sender.services.listeners;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -16,6 +16,15 @@ databaseChangeLog:
       file: db/changelog/changeset/create-refresh-token-table-12012026.yaml
 
   - include:
+      file: db/changelog/changeset/create-activation-tokens-table-19022026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-email-change-tokens-tables-01032026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-password-reset-tokens-table-02032026.yaml
+
+  - include:
       file: db/changelog/changeset/create-orders-table-19012026.yaml
 
   - include:

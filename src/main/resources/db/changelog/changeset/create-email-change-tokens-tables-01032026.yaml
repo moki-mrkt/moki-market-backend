@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-email-change-tokens-table
+      author: moki
+      changes:
+        - createTable:
+            tableName: email_change_tokens
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: token
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_email_tokens_to_users
+                    references: users(id)
+              - column:
+                  name: new_email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: used
+                  type: boolean
+                  defaultValueBoolean: false
+  - changeSet:
+      id: drop-used-column-from-email-change-token-table
+      author: KyryloPyvovarov
+      changes:
+        - dropColumn:
+            tableName: email_change_tokens
+            columnName: used

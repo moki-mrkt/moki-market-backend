@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ImageMapper {
 
-    @Value("${minio.external-url}")
+    @Value("${s3.public_url}")
     private String minioUrl;
 
     @Named("toFullUrl")

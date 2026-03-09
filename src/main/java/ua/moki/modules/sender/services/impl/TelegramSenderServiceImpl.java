@@ -101,7 +101,7 @@ public class TelegramSenderServiceImpl extends DefaultAbsSender implements Teleg
 
         addIfPresent(joiner, "м. ", dto.city());
         addIfPresent(joiner, "", dto.region());
-        addIfPresent(joiner, "від. №", dto.department());
+        addIfPresent(joiner, "від. ", dto.department());
         addIfPresent(joiner, "вул. ", dto.street());
         addIfPresent(joiner, "буд. ", dto.houseNumber());
         addIfPresent(joiner, "кв. ", dto.apartment());

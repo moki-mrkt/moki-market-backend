@@ -12,7 +12,8 @@ import java.security.Principal;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/carts")
+@RequestMapping("/cart")
+@PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
 public class CartController {
 
     private final CartService cartService;
@@ -22,8 +23,7 @@ public class CartController {
         this.cartService = cartService;
     }
 
-    @PostMapping("/add")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
+    @PostMapping("/items")
     public ResponseEntity<CartResponseDTO> addToCart(Principal principal,
                                                      @RequestParam Long productId,
                                                      @RequestParam @Min(1) int quantity) {
@@ -32,12 +32,30 @@ public class CartController {
         return ResponseEntity.ok(cartResponseDTO);
     }
 
-    @DeleteMapping("/clear")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<Void> clearCart(Principal principal) {
+    @PutMapping("/items/{productId}")
+    public ResponseEntity<CartResponseDTO> updateQuantity(Principal principal,
+                                                          @PathVariable Long productId,
+                                                          @RequestParam @Min(1) int quantity) {
         UUID userId = UUID.fromString(principal.getName());
-        cartService.clearCart(userId);
-        return ResponseEntity.noContent().build();
+        CartResponseDTO cartResponseDTO = cartService.updateItemQuantity(userId, productId, quantity);
+        return ResponseEntity.ok(cartResponseDTO);
+    }
+
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<CartResponseDTO> deleteItemFromCart(Principal principal,
+                                                              @PathVariable Long productId) {
+        UUID userId = UUID.fromString(principal.getName());
+        CartResponseDTO cartResponseDTO = cartService.deleteItemFromCart(userId, productId);
+        return ResponseEntity.ok(cartResponseDTO);
+    }
+
+    @GetMapping
+    public ResponseEntity<CartResponseDTO> getCart(Principal principal) {
+
+        UUID userId = UUID.fromString(principal.getName());
+        CartResponseDTO cartResponseDTO = cartService.getCart(userId);
+
+        return ResponseEntity.ok(cartResponseDTO);
     }
 
 }

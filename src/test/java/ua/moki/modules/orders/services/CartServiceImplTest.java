@@ -132,7 +132,7 @@ public class CartServiceImplTest {
         Cart cartBefore = cartRepository.findCartByUser_PublicId(testUser.getPublicId()).orElseThrow();
         assertThat(cartBefore.getItems()).isNotEmpty();
 
-        cartService.clearCart(testUser.getPublicId());
+        cartService.clearCart(testUser);
 
         Cart cartAfter = cartRepository.findCartByUser_PublicId(testUser.getPublicId()).orElseThrow();
         assertThat(cartAfter.getItems()).isEmpty();
@@ -143,7 +143,7 @@ public class CartServiceImplTest {
     void clearCart_shouldDoNothing_whenCartDoesNotExist() {
         UUID userIdWithoutCart = UUID.randomUUID();
 
-        cartService.clearCart(userIdWithoutCart);
+        cartService.clearCart(testUser);
 
         assertThat(cartRepository.findCartByUser_PublicId(userIdWithoutCart)).isEmpty();
     }
@@ -157,7 +157,7 @@ public class CartServiceImplTest {
         cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 1);
         cartService.addToCart(secondUser.getPublicId(), testProduct.getId(), 3);
 
-        cartService.clearCart(testUser.getPublicId());
+        cartService.clearCart(testUser);
 
         Cart cart1 = cartRepository.findCartByUser_PublicId(testUser.getPublicId()).orElseThrow();
         assertThat(cart1.getItems()).isEmpty();

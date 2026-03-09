@@ -5,7 +5,9 @@ import java.math.BigDecimal;
 public record CartItemResponseDTO(
         Long productId,
         String productName,
-        BigDecimal pricePerUnit,
+        String productImage,
+        BigDecimal currentPrice,
+        BigDecimal productPrice,
         int quantity,
         BigDecimal totalPrice
 ) {}

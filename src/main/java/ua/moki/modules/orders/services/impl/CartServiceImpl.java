@@ -29,6 +29,7 @@ public class CartServiceImpl implements CartService {
     private final CartMapper cartMapper;
 
     @Override
+    @Transactional
     public CartResponseDTO addToCart(UUID userId, Long productId, int quantity) {
 
         Cart cart = cartRepository.findCartByUser_PublicId(userId)
@@ -43,7 +44,6 @@ public class CartServiceImpl implements CartService {
                 () -> createAndAddNewItem(cart, productId, quantity)
         );
 
-        cart.setUpdatedAt(OffsetDateTime.now());
         cartRepository.save(cart);
 
         return cartMapper.toDto(cart);
@@ -70,11 +70,61 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void clearCart(UUID userId) {
-        cartRepository.findCartByUser_PublicId(userId)
+    public CartResponseDTO updateItemQuantity(UUID userId, Long productId, int quantity) {
+
+        Cart cart = findCartByUser_PublicId(userId);
+
+        CartItem itemToUpdate = cart.getItems().stream()
+                .filter(item -> item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Item not found in cart"));
+
+        itemToUpdate.setQuantity(quantity);
+
+        cartRepository.save(cart);
+
+        return cartMapper.toDto(cart);
+    }
+
+    @Override
+    @Transactional
+    public CartResponseDTO deleteItemFromCart(UUID userId, Long productId) {
+
+        Cart cart = findCartByUser_PublicId(userId);
+
+        CartItem itemToDelete = cart.getItems().stream()
+                .filter(item -> item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Item not found in cart"));
+
+        cart.getItems().remove(itemToDelete);
+        itemToDelete.setCart(null);
+
+        cartRepository.save(cart);
+
+        return cartMapper.toDto(cart);
+    }
+
+    @Override
+    @Transactional
+    public void clearCart(User user) {
+        cartRepository.findCartByUser(user)
                 .ifPresent(cart -> {
                     cart.getItems().clear();
                     cartRepository.save(cart);
                 });
+    }
+
+    @Override
+    @Transactional
+    public CartResponseDTO getCart(UUID userId) {
+        Cart cart = findCartByUser_PublicId(userId);
+        return cartMapper.toDto(cart);
+    }
+
+    private Cart findCartByUser_PublicId(UUID userId) {
+        return cartRepository.findCartByUser_PublicId(userId).orElseThrow(
+                () ->  new EntityNotFoundException("Cart not found")
+        );
     }
 }

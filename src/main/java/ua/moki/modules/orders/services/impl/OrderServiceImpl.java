@@ -21,6 +21,7 @@ import ua.moki.modules.orders.dtos.OrderRequestDTO;
 import ua.moki.modules.orders.dtos.OrderResponseDTO;
 import ua.moki.modules.orders.dtos.OrderUpdateDTO;
 import ua.moki.modules.orders.repositories.OrderRepository;
+import ua.moki.modules.orders.services.CartService;
 import ua.moki.modules.orders.services.OrderService;
 import ua.moki.modules.orders.utils.enums.OrderStatus;
 import ua.moki.modules.orders.utils.mappers.OrderMapper;
@@ -47,6 +48,7 @@ public class OrderServiceImpl implements OrderService {
 
     UserService userService;
     ProductService productService;
+    CartService cartService;
     OrderRepository orderRepository;
     OrderMapper orderMapper;
 
@@ -66,16 +68,18 @@ public class OrderServiceImpl implements OrderService {
 
         orderRepository.save(order);
 
+        cartService.clearCart(order.getUser());
+
         OrderResponseDTO orderResponseDTO = orderMapper.toDto(order);
 
-        eventPublisher.publishEvent(new TelegramNewOrderEvent(orderResponseDTO));
+        eventPublisher.publishEvent(
+                new TelegramNewOrderEvent(orderResponseDTO)
+        );
 
         return orderResponseDTO;
     }
 
     private void enrichOrderWithMeta(Order order, Authentication authentication) {
-
-        System.out.println(authentication);
 
         if (authentication != null
                 && authentication.isAuthenticated()
@@ -149,17 +153,11 @@ public class OrderServiceImpl implements OrderService {
 
         validateUserAccess(order, SecurityContextHolder.getContext().getAuthentication());
 
-        if (order.getOrderStatus() == OrderStatus.SHIPPED ||
-                order.getOrderStatus() == OrderStatus.DONE) {
+        if (order.getOrderStatus() != OrderStatus.NEW) {
             throw new IllegalStateException("Cannot cancel order that is already shipped");
         }
 
         order.setOrderStatus(OrderStatus.CANCELED);
-
-//        if (order.getPaymentStatus() == PaymentStatus.SUCCESS) {
-//             paymentService.initiateRefund(order);
-//            order.setPaymentStatus(PaymentStatus.REFUNDED);
-//        }
 
         orderRepository.save(order);
     }

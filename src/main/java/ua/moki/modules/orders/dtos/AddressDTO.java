@@ -6,7 +6,7 @@ public record AddressDTO (
         @NotBlank(message = "City is required")
         String city,
         String region,
-        @NotBlank(message = "Department or Street is required")
+        @NotBlank(message = "Department is required")
         String department,
         String street,
         String houseNumber,

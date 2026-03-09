@@ -56,3 +56,20 @@ databaseChangeLog:
                   type: INT
                   constraints:
                     nullable: false
+  - changeSet:
+      id: add-create-at-column-to-cart-items
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: cart_items
+                columnName: create_at
+      changes:
+        - addColumn:
+            tableName: cart_items
+            columns:
+              - column:
+                  name: create_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP

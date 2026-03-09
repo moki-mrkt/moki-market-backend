@@ -6,6 +6,7 @@ public record OrderItemDTO (
         Long productId,
         String itemName,
         BigDecimal finalPricePerUnit,
+        BigDecimal basePriceAtPurchase,
         int quantity,
         BigDecimal totalAmount
 ) {

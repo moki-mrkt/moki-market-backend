@@ -27,6 +27,7 @@ public class Cart {
     private User user;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createAt DESC")
     private List<CartItem> items = new ArrayList<>();
 
     @LastModifiedDate

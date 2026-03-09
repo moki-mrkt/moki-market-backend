@@ -192,3 +192,11 @@ databaseChangeLog:
                   defaultValueNumeric: '0'
                   constraints:
                     nullable: false
+  - changeSet:
+      id: drop-not-null-email-orders
+      author: KyryloPyvovarov-name
+      changes:
+        - dropNotNullConstraint:
+            tableName: orders
+            columnName: email
+            columnDataType: VARCHAR(255)

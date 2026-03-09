@@ -8,9 +8,6 @@ import ua.moki.modules.orders.utils.enums.PaymentType;
 import java.util.List;
 
 public record OrderRequestDTO(
-        @NotBlank
-        @Email(regexp = ".+@.+\\..+",
-                message = "Email is not correct")
         String email,
         @NotBlank(message = "Phone number should not be empty")
         @Size(max = 13)

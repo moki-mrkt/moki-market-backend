@@ -126,7 +126,7 @@ public class CartControllerTest {
                         .with(user(userId.toString()).roles("CUSTOMER")))
                 .andExpect(status().isNoContent());
 
-        verify(cartService, times(1)).clearCart(userId);
+        verify(cartService, times(1)).clearCart(any());
     }
 
     @Test

@@ -8,10 +8,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.infrastructure.storage.service.FileStorageService;
-import ua.moki.modules.orders.repositories.OrderItemRepository;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
 import ua.moki.modules.products.dtos.ProductRequestDTO;
@@ -20,6 +22,7 @@ import ua.moki.modules.products.dtos.ProductSearchRequestDTO;
 import ua.moki.modules.products.dtos.SearchResponse;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
+import ua.moki.modules.products.repositories.FavoriteProductRepository;
 import ua.moki.modules.products.repositories.ProductRepository;
 import ua.moki.modules.products.services.ProductService;
 import ua.moki.modules.products.services.ProductSpecifications;
@@ -31,6 +34,9 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
 
 @Slf4j
 @Service
@@ -39,23 +45,23 @@ public class ProductServiceImpl implements ProductService {
     private final Clock clock;
     private final ProductMapper productMapper;
     private final FileStorageService fileStorageService;
-    private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final ProductSpecifications productSpecifications;
+    private final FavoriteProductRepository favoriteProductRepository;
 
     @Autowired
     public ProductServiceImpl(Clock clock,
                               ProductMapper productMapper,
                               FileStorageService fileStorageService,
-                              OrderItemRepository orderItemRepository,
                               ProductRepository productRepository,
-                              ProductSpecifications productSpecifications) {
+                              ProductSpecifications productSpecifications,
+                              FavoriteProductRepository favoriteProductRepository) {
         this.clock = clock;
         this.productMapper = productMapper;
         this.fileStorageService = fileStorageService;
-        this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.productSpecifications = productSpecifications;
+        this.favoriteProductRepository = favoriteProductRepository;
     }
 
 
@@ -69,12 +75,10 @@ public class ProductServiceImpl implements ProductService {
         product.setRating(BigDecimal.valueOf(0));
 
         Product savedProduct = productRepository.save(product);
-        // Todo create for elasticsearch
-        // productSearchRepository.save(productMapper.toDocument(savedProduct));
 
         log.info("product created: {}", savedProduct.getId());
 
-        return productMapper.toResponseDTO(savedProduct);
+        return getProductMapperFunction().apply(savedProduct);
     }
 
     @Override
@@ -87,10 +91,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-        // Todo update for elasticsearch
-        // productSearchRepository.save(productMapper.toDocument(savedProduct));
-
-        return productMapper.toResponseDTO(savedProduct);
+        return getProductMapperFunction().apply(savedProduct);
     }
 
     @Override
@@ -127,7 +128,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductResponseDTO getProductById(Long productId) {
-        return productMapper.toResponseDTO(findById(productId));
+        return getProductMapperFunction().apply(findById(productId));
     }
 
     @Override
@@ -136,7 +137,7 @@ public class ProductServiceImpl implements ProductService {
 
         if (query == null || query.isBlank()) {
             return productRepository.findAll(pageable)
-                    .map(productMapper::toResponseDTO);
+                    .map(getProductMapperFunction());
         }
 
         ProductSearchRequestDTO searchRequest = new ProductSearchRequestDTO(
@@ -146,13 +147,13 @@ public class ProductServiceImpl implements ProductService {
         Specification<Product> spec = productSpecifications.getSpecifications(searchRequest, false);
 
         return productRepository.findAll(spec, pageable)
-                .map(productMapper::toResponseDTO);
+                .map(getProductMapperFunction());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> getAllProductByCategory(ProductCategory productCategory, int page, int size) {
-        return productRepository.findAllByProductCategory(productCategory, PageRequest.of(page, size)).map(productMapper::toResponseDTO);
+        return productRepository.findAllByProductCategory(productCategory, PageRequest.of(page, size)).map(getProductMapperFunction());
     }
 
     @Override
@@ -160,21 +161,21 @@ public class ProductServiceImpl implements ProductService {
     public Page<ProductResponseDTO> getNewProducts(int page, int size) {
 
         return productRepository.findAll(PageRequest.of(page, size, Sort.by("creationTime").descending()))
-                .map(productMapper::toResponseDTO);
+                .map(getProductMapperFunction());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> getProductsWithDiscount(int page, int size) {
         return productRepository.findAllWithDiscount(PageRequest.of(page, size, Sort.by("creationTime")))
-                .map(productMapper::toResponseDTO);
+                .map(getProductMapperFunction());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> getBestsellers(int page, int size) {
         return productRepository.findAll(PageRequest.of(page, size, Sort.by("salesCount").descending()))
-                .map(productMapper::toResponseDTO);
+                .map(getProductMapperFunction());
     }
 
     @Override
@@ -197,10 +198,36 @@ public class ProductServiceImpl implements ProductService {
         Map<String, Double> minMax = productSpecifications.getMinMaxPricesBySpecification(limitSpec);
 
         return new SearchResponse(
-                products.map(productMapper::toResponseDTO),
+                products.map(getProductMapperFunction()),
                 subcategories,
                 minMax.get("minPrice"),
                 minMax.get("maxPrice")
         );
+    }
+
+    private Function<Product, ProductResponseDTO> getProductMapperFunction() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                authentication instanceof AnonymousAuthenticationToken) {
+            return productMapper::toResponseDTO;
+        }
+
+        try {
+            UUID userId = UUID.fromString(authentication.getName());
+
+            Set<Long> favoriteIds = favoriteProductRepository.findProductIdsByUserPublicId(userId);
+
+            return product -> {
+                boolean isFav = favoriteIds.contains(product.getId());
+                return productMapper.toResponseDTO(product, isFav);
+            };
+
+        } catch (IllegalArgumentException e) {
+            log.error("User ID is not a valid UUID: {}", authentication.getName());
+            return productMapper::toResponseDTO;
+        }
     }
 }

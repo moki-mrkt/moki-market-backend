@@ -22,7 +22,11 @@ public interface ProductMapper {
     @Mapping(target = "images", ignore = true)
     Product toEntity(ProductRequestDTO productRequestDTO);
 
+    @Mapping(target = "isFavorite", constant = "false")
     ProductResponseDTO toResponseDTO(Product product);
+
+    @Mapping(target = "isFavorite", source = "isFavorite")
+    ProductResponseDTO toResponseDTO(Product product, boolean isFavorite);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "rating", ignore = true)

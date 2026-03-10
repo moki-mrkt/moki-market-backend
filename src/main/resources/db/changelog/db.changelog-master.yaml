@@ -25,6 +25,9 @@ databaseChangeLog:
       file: db/changelog/changeset/create-password-reset-tokens-table-02032026.yaml
 
   - include:
+      file: db/changelog/changeset/create-favorite-product-table-09032026.yaml
+
+  - include:
       file: db/changelog/changeset/create-orders-table-19012026.yaml
 
   - include:

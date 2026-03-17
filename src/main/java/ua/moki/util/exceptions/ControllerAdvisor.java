@@ -59,4 +59,9 @@ public class ControllerAdvisor {
     public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
+
+    @ExceptionHandler(AlreadyExistsException.class)
+    public ProblemDetail handleAlreadyExistsException(AlreadyExistsException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
 }

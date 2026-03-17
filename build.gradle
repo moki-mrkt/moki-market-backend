@@ -41,6 +41,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:4.0.1'
     implementation 'org.telegram:telegrambots:6.9.7.1'
 
+    implementation("com.github.slugify:slugify:3.0.7")
+
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 
     compileOnly 'org.projectlombok:lombok'

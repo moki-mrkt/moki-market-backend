@@ -26,6 +26,7 @@ import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.services.ProductService;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.services.UserService;
+import ua.moki.util.exceptions.AlreadyExistsException;
 import ua.moki.util.exceptions.EntityNotFoundException;
 
 import java.math.BigDecimal;
@@ -51,8 +52,11 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         User user = userService.getActiveUserEntityByPublicId(userId);
 
-        //один юзер не може два рази створити до магазини чи до того самого продукту
-
+        if (dto.productId() != null && feedbackRepository.existsProductFeedbackByUserAndProductId(user, dto.productId())) {
+            throw new AlreadyExistsException("Ви вже залишили відгук про цей товар");
+        } else if (dto.productId() == null && feedbackRepository.existsStoreFeedbackByUser(user)) {
+            throw new AlreadyExistsException("Ви вже залишили відгук про наш магазин");
+        }
 
         Feedback feedback = dto.productId() != null ? createProductFeedback(dto.productId()) : new StoreFeedback();
 
@@ -172,16 +176,34 @@ public class FeedbackServiceImpl implements FeedbackService {
         return feedbackMapper.toDto(findFeedbackById(feedbackId));
     }
 
-    private Feedback findFeedbackById(Long feedbackId) {
-        return feedbackRepository.findById(feedbackId)
+    @Override
+    @Transactional(readOnly = true)
+    public FeedbackResponseDTO getUserFeedbackAboutStore(UUID userId) {
+        Feedback feedback = feedbackRepository.findStoreFeedbackByUserId(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Feedback not found"));
+
+        return feedbackMapper.toDto(feedback);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FeedbackResponseDTO> getFeedbacksByUserId(UUID userId, int page, int size) {
-        return feedbackRepository.findAllByUser_PublicId(userId, PageRequest.of(page, size, Sort.by("createdAt").descending()))
+    public FeedbackResponseDTO getUserFeedbackAboutProduct(UUID userId, Long productId) {
+        Feedback feedback = feedbackRepository.findUserFeedbackByUserIdAndProductId(userId, productId)
+                .orElseThrow(() -> new EntityNotFoundException("Feedback not found"));
+
+        return feedbackMapper.toDto(feedback);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FeedbackResponseDTO> getUserFeedbacksAboutProducts(UUID userId, int page, int size) {
+        return feedbackRepository.findProductFeedbacksByUserId(userId, PageRequest.of(page, size, Sort.by("createdAt").descending()))
                 .map(feedbackMapper::toDto);
+    }
+
+    private Feedback findFeedbackById(Long feedbackId) {
+        return feedbackRepository.findById(feedbackId)
+                .orElseThrow(() -> new EntityNotFoundException("Feedback not found"));
     }
 
     @Override

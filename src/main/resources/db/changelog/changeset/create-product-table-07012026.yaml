@@ -156,3 +156,20 @@ databaseChangeLog:
             tableName: products
             columnName: name
             newDataType: VARCHAR(64)
+  - changeSet:
+      id: add-slug-column
+      author: KyryloPyvovarov
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: slug
+                  type: TEXT
+                  constraints:
+                    nullable: true
+                    unique: true
+        - modifyDataType:
+            tableName: products
+            columnName: name
+            newDataType: VARCHAR(255)

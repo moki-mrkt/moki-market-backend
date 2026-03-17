@@ -36,6 +36,8 @@ public class Product {
 
     @Column(nullable = false, length = 64)
     String name;
+    @Column(name = "slug", unique = true, nullable = false)
+    String slug;
     @Enumerated(EnumType.STRING)
     @Column(name = "product_category", nullable = false, length = 32)
     ProductCategory productCategory;

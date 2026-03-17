@@ -19,7 +19,9 @@ public interface FeedbackService {
     BigDecimal getAverageRatingForProduct(Long productId);
     BigDecimal getAverageRatingForStore();
     FeedbackResponseDTO getFeedbackById(Long feedbackId);
-    Page<FeedbackResponseDTO> getFeedbacksByUserId(UUID userId, int page, int size);
+    FeedbackResponseDTO getUserFeedbackAboutStore(UUID userId);
+    FeedbackResponseDTO getUserFeedbackAboutProduct(UUID userId, Long productId);
+    Page<FeedbackResponseDTO> getUserFeedbacksAboutProducts(UUID userId, int page, int size);
     Page<FeedbackResponseDTO> getFeedbacksByProductId(Long productId, int page, int size);
     Page<FeedbackResponseDTO> getFeedbacksAboutStore(int page, int size);
     Page<FeedbackResponseDTO> getAllFeedbacks(int page, int size);

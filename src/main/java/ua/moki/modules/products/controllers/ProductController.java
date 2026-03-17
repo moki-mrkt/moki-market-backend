@@ -73,7 +73,16 @@ public class ProductController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long id) {
 
-        ProductResponseDTO product =  productService.getProductById(id);
+        ProductResponseDTO product = productService.getProductById(id);
+        return ResponseEntity.ok(product);
+    }
+
+    @GetMapping("/slug/{slug}")
+    @SecurityRequirements()
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<ProductResponseDTO> getProductBySlug(@PathVariable String slug) {
+
+        ProductResponseDTO product = productService.getProductBySlug(slug);
         return ResponseEntity.ok(product);
     }
 

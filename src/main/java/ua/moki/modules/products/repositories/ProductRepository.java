@@ -12,6 +12,7 @@ import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.enums.ProductCategory;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends
@@ -19,6 +20,7 @@ public interface ProductRepository extends
         JpaSpecificationExecutor<Product>,
         ProductRepositoryCustom {
 
+    Optional<Product> findBySlug(String slug);
     Page<Product> findAll(Pageable pageable);
     Page<Product> findAllByProductCategory(ProductCategory productCategory, Pageable pageable);
 
@@ -27,10 +29,6 @@ public interface ProductRepository extends
 
     Page<Product> findAll(Specification specification, Pageable pageable);
 
-    @Query("SELECT DISTINCT p.subcategory FROM Product p WHERE p.productCategory = :category")
-    List<String> findDistinctSubcategories(@Param("category") ProductCategory category);
-
-    @Query("SELECT MIN(p.price), MAX(p.price) FROM Product p WHERE p.productCategory = :category")
-    Object[] findMinMaxPriceByCategory(@Param("category") ProductCategory category);
+    boolean existsBySlug(String slug);
 
 }

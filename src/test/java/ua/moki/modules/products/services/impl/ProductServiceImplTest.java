@@ -3,12 +3,8 @@ package ua.moki.modules.products.services.impl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.utility.TestcontainersConfiguration;
 import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
@@ -373,7 +369,7 @@ public class ProductServiceImplTest extends BaseIntegrationTest {
     @DisplayName("getAllProductByCategory returns an empty page if the category is empty")
     void getAllProductByCategory_shouldReturnEmpty_whenNoProductsInCategory() {
 
-        createAndSaveProduct("Candy", ProductCategory.CANDIES);
+        createAndSaveProduct("Candy", ProductCategory.SWEETS);
 
         Page<ProductResponseDTO> result = productService.getAllProductByCategory(ProductCategory.SPICES, 0, 10);
 

@@ -8,14 +8,14 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
-public record ProductResponseDTO(
+public record ProductAdminResponseDTO(
         Long id,
         String name,
-        String slug,
         ProductCategory productCategory,
         String description,
         BigDecimal price,
         BigDecimal priceWithDiscount,
+        BigDecimal purchasePrice,
         Integer discount,
         BigDecimal rating,
         Long reviewsCount,
@@ -24,7 +24,9 @@ public record ProductResponseDTO(
         String subcategory,
         String initOfMeasure,
         Integer valueOfInitOfMeasure,
+        Long salesCount,
         boolean isFavorite,
+        OffsetDateTime creationTime,
         List<ProductImageResponseDTO> images,
         Map<String, String> characteristics
 ) {

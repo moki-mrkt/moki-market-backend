@@ -1,6 +1,7 @@
 package ua.moki.modules.products.services.impl;
 
 
+import com.github.slugify.Slugify;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,15 +28,13 @@ import ua.moki.modules.products.repositories.ProductRepository;
 import ua.moki.modules.products.services.ProductService;
 import ua.moki.modules.products.services.ProductSpecifications;
 import ua.moki.modules.products.utils.mappers.ProductMapper;
+import ua.moki.util.exceptions.AlreadyExistsException;
 import ua.moki.util.exceptions.EntityNotFoundException;
 
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 @Slf4j
@@ -48,6 +47,12 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductSpecifications productSpecifications;
     private final FavoriteProductRepository favoriteProductRepository;
+
+    private final Slugify slugify = Slugify.builder().transliterator(true)
+            .customReplacement("х", "kh")
+            .customReplacement("щ", "shch")
+            .customReplacement("ц", "ts")
+            .build();
 
     @Autowired
     public ProductServiceImpl(Clock clock,
@@ -70,6 +75,14 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) {
 
         Product product = productMapper.toEntity(productRequestDTO);
+
+        String productSlug = slugify.slugify(product.getName());
+
+        if (productRepository.existsBySlug(productSlug)) {
+            throw new AlreadyExistsException("Product with slug " + productSlug + " already exists");
+        }
+
+        product.setSlug(productSlug);
 
         product.setCreationTime(OffsetDateTime.now(clock));
         product.setRating(BigDecimal.valueOf(0));
@@ -123,6 +136,16 @@ public class ProductServiceImpl implements ProductService {
     public Product findById(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + productId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductResponseDTO getProductBySlug(String slug) {
+
+        Product product = productRepository.findBySlug(slug)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found with slug: " + slug));
+
+        return getProductMapperFunction().apply(product);
     }
 
     @Override

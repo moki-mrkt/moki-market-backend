@@ -65,13 +65,31 @@ public class FeedbackController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/my")
+    @GetMapping("/store/my")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<Page<FeedbackResponseDTO>> getFeedbacksByUserId(Principal principal,
+    public ResponseEntity<FeedbackResponseDTO> getUserFeedbackAboutStore(Principal principal) {
+
+        FeedbackResponseDTO responseDTO = feedbackService.getUserFeedbackAboutStore(UUID.fromString(principal.getName()));
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @GetMapping("/products/my")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<Page<FeedbackResponseDTO>> getProductFeedbacksByUserId(Principal principal,
                                                                @RequestParam @Min(0) int page,
                                                                @RequestParam @Min(0) int size) {
 
-        Page<FeedbackResponseDTO> responseDTO = feedbackService.getFeedbacksByUserId(UUID.fromString(principal.getName()), page, size);
+        Page<FeedbackResponseDTO> responseDTO = feedbackService.getUserFeedbacksAboutProducts(UUID.fromString(principal.getName()), page, size);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @GetMapping("/products/{productId}/my")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<FeedbackResponseDTO> getUserFeedbacksAboutFeedback(Principal principal, @PathVariable Long productId) {
+
+        FeedbackResponseDTO responseDTO = feedbackService.getUserFeedbackAboutProduct(UUID.fromString(principal.getName()), productId);
 
         return ResponseEntity.ok(responseDTO);
     }
@@ -79,6 +97,7 @@ public class FeedbackController {
 
     @GetMapping("/product/{productId}")
     @PreAuthorize("permitAll()")
+    @SecurityRequirements()
     public ResponseEntity<Page<FeedbackResponseDTO>> getFeedbacksByProductId(@PathVariable Long productId,
                                                                              @RequestParam @Min(0) int page,
                                                                              @RequestParam @Min(0) int size) {

@@ -29,6 +29,7 @@ public class Feedback {
 
     @Column(nullable = false)
     private String comment;
+
     @Column(nullable = false)
     private Integer rating;
 

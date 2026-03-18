@@ -2,10 +2,7 @@ package ua.moki.modules.feedback.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
-import ua.moki.modules.feedback.dtos.FeedbackAnswerDTO;
-import ua.moki.modules.feedback.dtos.FeedbackRequestDTO;
-import ua.moki.modules.feedback.dtos.FeedbackResponseDTO;
-import ua.moki.modules.feedback.dtos.FeedbackUpdateDTO;
+import ua.moki.modules.feedback.dtos.*;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -21,7 +18,7 @@ public interface FeedbackService {
     FeedbackResponseDTO getFeedbackById(Long feedbackId);
     FeedbackResponseDTO getUserFeedbackAboutStore(UUID userId);
     FeedbackResponseDTO getUserFeedbackAboutProduct(UUID userId, Long productId);
-    Page<FeedbackResponseDTO> getUserFeedbacksAboutProducts(UUID userId, int page, int size);
+    Page<ProductFeedbackResponseDTO> getUserFeedbacksAboutProducts(UUID userId, int page, int size);
     Page<FeedbackResponseDTO> getFeedbacksByProductId(Long productId, int page, int size);
     Page<FeedbackResponseDTO> getFeedbacksAboutStore(int page, int size);
     Page<FeedbackResponseDTO> getAllFeedbacks(int page, int size);

@@ -76,11 +76,11 @@ public class FeedbackController {
 
     @GetMapping("/products/my")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<Page<FeedbackResponseDTO>> getProductFeedbacksByUserId(Principal principal,
+    public ResponseEntity<Page<ProductFeedbackResponseDTO>> getProductFeedbacksByUserId(Principal principal,
                                                                @RequestParam @Min(0) int page,
                                                                @RequestParam @Min(0) int size) {
 
-        Page<FeedbackResponseDTO> responseDTO = feedbackService.getUserFeedbacksAboutProducts(UUID.fromString(principal.getName()), page, size);
+        Page<ProductFeedbackResponseDTO> responseDTO = feedbackService.getUserFeedbacksAboutProducts(UUID.fromString(principal.getName()), page, size);
 
         return ResponseEntity.ok(responseDTO);
     }

@@ -14,10 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ua.moki.modules.feedback.domains.Feedback;
 import ua.moki.modules.feedback.domains.ProductFeedback;
 import ua.moki.modules.feedback.domains.StoreFeedback;
-import ua.moki.modules.feedback.dtos.FeedbackAnswerDTO;
-import ua.moki.modules.feedback.dtos.FeedbackRequestDTO;
-import ua.moki.modules.feedback.dtos.FeedbackResponseDTO;
-import ua.moki.modules.feedback.dtos.FeedbackUpdateDTO;
+import ua.moki.modules.feedback.dtos.*;
 import ua.moki.modules.feedback.repositories.FeedbackRepository;
 import ua.moki.modules.feedback.services.FeedbackService;
 import ua.moki.modules.feedback.services.events.ProductRatingUpdateEvent;
@@ -95,6 +92,11 @@ public class FeedbackServiceImpl implements FeedbackService {
         feedback.setRating(dto.rating());
 
         Feedback savedFeedback = feedbackRepository.save(feedback);
+
+        if (savedFeedback instanceof ProductFeedback productFeedback) {
+            Long productId = productFeedback.getProduct().getId();
+            eventPublisher.publishEvent(new ProductRatingUpdateEvent(productId));
+        }
 
         return feedbackMapper.toDto(savedFeedback);
     }
@@ -196,9 +198,9 @@ public class FeedbackServiceImpl implements FeedbackService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FeedbackResponseDTO> getUserFeedbacksAboutProducts(UUID userId, int page, int size) {
+    public Page<ProductFeedbackResponseDTO> getUserFeedbacksAboutProducts(UUID userId, int page, int size) {
         return feedbackRepository.findProductFeedbacksByUserId(userId, PageRequest.of(page, size, Sort.by("createdAt").descending()))
-                .map(feedbackMapper::toDto);
+                .map(feedbackMapper::toProductFeedbackDto);
     }
 
     private Feedback findFeedbackById(Long feedbackId) {

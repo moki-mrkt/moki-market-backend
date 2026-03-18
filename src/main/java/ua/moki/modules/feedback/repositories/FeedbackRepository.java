@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ua.moki.modules.feedback.domains.Feedback;
+import ua.moki.modules.feedback.domains.ProductFeedback;
 import ua.moki.modules.users.domains.User;
 
 import java.util.Optional;
@@ -23,7 +24,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     Optional<Feedback> findStoreFeedbackByUserId(@Param("userId") UUID userId);
 
     @Query("SELECT f FROM ProductFeedback f WHERE f.user.publicId = :userId")
-    Page<Feedback> findProductFeedbacksByUserId(@Param("userId") UUID userId, Pageable pageable);
+    Page<ProductFeedback> findProductFeedbacksByUserId(@Param("userId") UUID userId, Pageable pageable);
 
     @Query("SELECT f FROM ProductFeedback f WHERE f.user.publicId = :userId AND f.product.id = :productId")
     Optional<Feedback> findUserFeedbackByUserIdAndProductId(@Param("userId") UUID userId, Long productId);

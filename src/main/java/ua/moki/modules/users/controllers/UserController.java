@@ -79,29 +79,23 @@ public class UserController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<UserResponseDTO> updateUserByAdmin(@PathVariable UUID id,
-                                                             @RequestBody UserUpdateDTO userUpdateDTO) {
-
-        UserResponseDTO updatedUser = userService.updateUser(id, userUpdateDTO);
-
+    public ResponseEntity<UserAdminResponseDTO> updateUserByAdmin(@PathVariable UUID id,
+                                                             @RequestBody UserAdminUpdateDTO userAdminUpdateDTO) {
+        UserAdminResponseDTO updatedUser = userService.updateUserByAdmin(id, userAdminUpdateDTO);
         return ResponseEntity.ok(updatedUser);
     }
 
     @PatchMapping("/{id}/block-status")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Void> switchBlockStatusUser(@PathVariable UUID id, @RequestParam boolean isBlocked) {
-
         userService.updateBlockStatus(id, isBlocked);
-
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<Void> deleteUserByAdmin(@PathVariable UUID id) {
-
         userService.deleteUser(id);
-
         return ResponseEntity.noContent().build();
     }
 
@@ -110,12 +104,6 @@ public class UserController {
     public ResponseEntity<Void> deleteCurrentAccount(@NotNull Principal principal) {
         userService.deleteUser(UUID.fromString(principal.getName()));
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getActiveUserByPublicId(id));
     }
 
     @GetMapping("/profile")
@@ -127,12 +115,12 @@ public class UserController {
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Page<UserResponseDTO>> getAllUsers(
+    public ResponseEntity<Page<UserAdminResponseDTO>> getAllUsers(
             @RequestParam(required = false) Boolean deleted,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<UserResponseDTO> users = userService.getAllUser(deleted, PageRequest.of(page, size));
+        Page<UserAdminResponseDTO> users = userService.getAllUser(deleted, PageRequest.of(page, size));
         return ResponseEntity.ok(users);
     }
 

@@ -12,12 +12,14 @@ public interface UserService {
     UserResponseDTO createUser(UserCreateDTO userCreateDTO);
     UserResponseDTO createManager(UserCreateDTO userCreateDTO);
     UserResponseDTO updateUser(UUID publicId, UserUpdateDTO userUpdateDTO);
+    UserAdminResponseDTO updateUserByAdmin(UUID publicId, UserAdminUpdateDTO userAdminUpdateDTO);
     UserResponseDTO updateAvatar(UUID publicId, AvatarUpdateDTO avatarUpdateDTO);
     void updateBlockStatus(UUID publicId, boolean isBlocked);
     void deleteUser(UUID publicId);
     User getUserById(Long id);
     User getActiveUserEntityByPublicId(UUID publicId);
     UserResponseDTO getActiveUserByPublicId(UUID publicId);
+    UserAdminResponseDTO getUserByPublicIdForAdmin(UUID publicId);
 
-    Page<UserResponseDTO> getAllUser(Boolean isDeleted, Pageable pageable);
+    Page<UserAdminResponseDTO> getAllUser(Boolean isDeleted, Pageable pageable);
 }

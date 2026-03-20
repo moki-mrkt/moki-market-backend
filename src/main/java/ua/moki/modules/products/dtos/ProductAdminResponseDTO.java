@@ -25,7 +25,6 @@ public record ProductAdminResponseDTO(
         String initOfMeasure,
         Integer valueOfInitOfMeasure,
         Long salesCount,
-        boolean isFavorite,
         OffsetDateTime creationTime,
         List<ProductImageResponseDTO> images,
         Map<String, String> characteristics

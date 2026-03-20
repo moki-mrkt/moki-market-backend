@@ -17,10 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ua.moki.infrastructure.storage.service.FileStorageService;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
-import ua.moki.modules.products.dtos.ProductRequestDTO;
-import ua.moki.modules.products.dtos.ProductResponseDTO;
-import ua.moki.modules.products.dtos.ProductSearchRequestDTO;
-import ua.moki.modules.products.dtos.SearchResponse;
+import ua.moki.modules.products.dtos.*;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
 import ua.moki.modules.products.repositories.FavoriteProductRepository;
@@ -156,11 +153,24 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponseDTO> getAllProducts(String query, Pageable pageable) {
+    public ProductAdminResponseDTO getProductByIdForAdmin(Long productId) {
+        return productMapper.toAdminResponseDTO(findById(productId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductPublicDTO> getAllProductsForPublic(Pageable pageable) {
+        return productRepository.findAll(pageable)
+                .map(productMapper::toPublicDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductAdminResponseDTO> getAllProducts(String query, Pageable pageable) {
 
         if (query == null || query.isBlank()) {
             return productRepository.findAll(pageable)
-                    .map(getProductMapperFunction());
+                    .map(productMapper::toAdminResponseDTO);
         }
 
         ProductSearchRequestDTO searchRequest = new ProductSearchRequestDTO(
@@ -170,7 +180,7 @@ public class ProductServiceImpl implements ProductService {
         Specification<Product> spec = productSpecifications.getSpecifications(searchRequest, false);
 
         return productRepository.findAll(spec, pageable)
-                .map(getProductMapperFunction());
+                .map(productMapper::toAdminResponseDTO);
     }
 
     @Override

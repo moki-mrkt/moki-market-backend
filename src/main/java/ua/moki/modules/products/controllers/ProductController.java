@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -12,10 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import ua.moki.modules.products.dtos.ProductRequestDTO;
-import ua.moki.modules.products.dtos.ProductResponseDTO;
-import ua.moki.modules.products.dtos.ProductSearchRequestDTO;
-import ua.moki.modules.products.dtos.SearchResponse;
+import ua.moki.modules.products.dtos.*;
 import ua.moki.modules.products.enums.ProductCategory;
 import ua.moki.modules.products.services.ProductService;
 
@@ -77,6 +75,13 @@ public class ProductController {
         return ResponseEntity.ok(product);
     }
 
+    @GetMapping("/{id}/admin")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ProductAdminResponseDTO> getProductByIdForAdmin(@PathVariable Long id) {
+        ProductAdminResponseDTO product = productService.getProductByIdForAdmin(id);
+        return ResponseEntity.ok(product);
+    }
+
     @GetMapping("/slug/{slug}")
     @SecurityRequirements()
     @PreAuthorize("permitAll()")
@@ -88,11 +93,23 @@ public class ProductController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(@RequestParam(required = false) String query,
+    public ResponseEntity<Page<ProductAdminResponseDTO>> getAllProducts(@RequestParam(required = false) String query,
                                                                    @PageableDefault(sort = "creationTime",
                                                                            direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<ProductResponseDTO> products = productService.getAllProducts(query, pageable);
+        Page<ProductAdminResponseDTO> products = productService.getAllProducts(query, pageable);
         return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/public/sitemap")
+    @SecurityRequirements()
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Page<ProductPublicDTO>> getAllProductsForPublic(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size
+    ) {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ProductPublicDTO> products = productService.getAllProductsForPublic(pageable);
+            return ResponseEntity.ok(products);
     }
 
     @GetMapping("/new")

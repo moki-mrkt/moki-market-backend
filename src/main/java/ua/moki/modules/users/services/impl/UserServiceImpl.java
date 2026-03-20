@@ -14,10 +14,7 @@ import ua.moki.infrastructure.storage.service.FileStorageService;
 import ua.moki.modules.sender.services.events.VerifyEmailEvent;
 import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.domains.UserDeliveryInfo;
-import ua.moki.modules.users.dtos.AvatarUpdateDTO;
-import ua.moki.modules.users.dtos.UserCreateDTO;
-import ua.moki.modules.users.dtos.UserResponseDTO;
-import ua.moki.modules.users.dtos.UserUpdateDTO;
+import ua.moki.modules.users.dtos.*;
 import ua.moki.modules.users.repositories.UserRepository;
 import ua.moki.modules.users.services.tokens.ActivationTokenService;
 import ua.moki.modules.users.services.tokens.EmailTokenService;
@@ -133,6 +130,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserAdminResponseDTO updateUserByAdmin(UUID publicId, UserAdminUpdateDTO userAdminUpdateDTO) {
+
+        User user = getActiveUserEntityByPublicId(publicId);
+
+        userMapper.updateUserFromAdminDto(userAdminUpdateDTO, user);
+
+        User savedUser = userRepository.save(user);
+
+        return userMapper.toAdminResponseDTO(savedUser);
+    }
+
+    @Override
+    @Transactional
     public UserResponseDTO updateAvatar(UUID publicId, AvatarUpdateDTO avatarUpdateDTO) {
 
         User user = getActiveUserEntityByPublicId(publicId);
@@ -217,12 +227,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserResponseDTO> getAllUser(Boolean isDeleted, Pageable pageable) {
+    public UserAdminResponseDTO getUserByPublicIdForAdmin(UUID publicId) {
+        return userMapper.toAdminResponseDTO(getActiveUserEntityByPublicId(publicId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserAdminResponseDTO> getAllUser(Boolean isDeleted, Pageable pageable) {
 
         Page<User> userPage = isDeleted == null
                 ? userRepository.findAll(pageable)
                 : userRepository.findAllByDeleted(isDeleted, pageable);
 
-        return userPage.map(userMapper::toResponseDTO);
+        return userPage.map(userMapper::toAdminResponseDTO);
     }
 }

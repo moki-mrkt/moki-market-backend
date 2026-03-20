@@ -6,9 +6,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
-import ua.moki.modules.products.dtos.ProductImageDTO;
-import ua.moki.modules.products.dtos.ProductRequestDTO;
-import ua.moki.modules.products.dtos.ProductResponseDTO;
+import ua.moki.modules.products.dtos.*;
 
 import java.util.List;
 
@@ -24,6 +22,10 @@ public interface ProductMapper {
 
     @Mapping(target = "isFavorite", constant = "false")
     ProductResponseDTO toResponseDTO(Product product);
+
+    ProductAdminResponseDTO toAdminResponseDTO(Product product);
+
+    ProductPublicDTO toPublicDTO(Product product);
 
     @Mapping(target = "isFavorite", source = "isFavorite")
     ProductResponseDTO toResponseDTO(Product product, boolean isFavorite);

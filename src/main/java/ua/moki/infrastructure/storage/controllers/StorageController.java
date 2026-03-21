@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ua.moki.infrastructure.storage.service.FileStorageService;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,13 +18,26 @@ public class StorageController {
 
     private final FileStorageService fileStorageService;
 
+
+    @PostMapping("/product")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> uploadProductPhoto(@RequestParam("file") MultipartFile file) {
+
+        String imageId = fileStorageService.uploadProductImage(file);
+
+        return ResponseEntity.ok(Map.of(
+                "imageId", imageId,
+                "url", "http://localhost:9000/moki-images/products/" + imageId + "_medium.webp"
+        ));
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
-    public ResponseEntity<Map<String, String>> uploadFile(
+    public ResponseEntity<Map<String, String>> uploadUserPhoto(
             @RequestParam("file") MultipartFile file,
             @RequestParam("folder") String folder
     ) {
-        String key = fileStorageService.upload(file, folder);
+        String key = fileStorageService.uploadUserPhoto(file, folder);
 
         return ResponseEntity.ok(Map.of(
                 "key", key,

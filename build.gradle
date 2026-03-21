@@ -42,6 +42,9 @@ dependencies {
     implementation 'org.telegram:telegrambots:6.9.7.1'
 
     implementation("com.github.slugify:slugify:3.0.7")
+    implementation 'com.ibm.icu:icu4j:72.1'
+    implementation("com.sksamuel.scrimage:scrimage-core:4.3.10")
+    implementation("com.sksamuel.scrimage:scrimage-webp:4.3.8")
 
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 

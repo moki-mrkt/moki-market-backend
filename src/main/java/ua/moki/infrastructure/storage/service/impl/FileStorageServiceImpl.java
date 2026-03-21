@@ -11,7 +11,10 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 import ua.moki.infrastructure.storage.service.FileStorageService;
+import ua.moki.util.ImageConverter;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -21,28 +24,44 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FileStorageServiceImpl implements FileStorageService {
 
-    @Autowired
     private final S3Client s3Client;
+    private final ImageConverter imageConverter;
 
     @Value("${s3.bucket}")
     private String bucket;
 
     @Override
     @SneakyThrows
-    public String upload(MultipartFile file, String folder) {
+    public String uploadProductImage(MultipartFile file) {
+        String folder = "products";
+        String baseUuid = UUID.randomUUID().toString();
+        byte[] originalBytes = file.getBytes();
 
-        String extension = getExtension(file.getOriginalFilename());
-        String key = folder + "/" + UUID.randomUUID() + extension;
+        for (ImageConverter.ImageSize size : ImageConverter.ImageSize.values()) {
+            byte[] processedImage = imageConverter.resizeAndConvertToWebp(originalBytes, size);
+            String key = folder + "/" + baseUuid + size.suffix + ".webp";
+            uploadToS3(key, processedImage, "image/webp");
+        }
 
+        return folder + "/" + baseUuid;
+    }
+
+    private void uploadToS3(String key, byte[] bytes, String contentType) {
         PutObjectRequest putOb = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
-                .contentType(file.getContentType())
-                // .acl(ObjectCannedACL.PUBLIC_READ) // Для MinIO не обов'язково, бо бакет публічний
+                .contentType(contentType)
                 .build();
 
-        s3Client.putObject(putOb, RequestBody.fromBytes(file.getBytes()));
+        s3Client.putObject(putOb, RequestBody.fromBytes(bytes));
+    }
 
+    @Override
+    @SneakyThrows
+    public String uploadUserPhoto(MultipartFile file, String folder) {
+        String key = folder + "/" + UUID.randomUUID() + getExtension(file.getOriginalFilename());
+
+        uploadToS3(key, file.getBytes(), file.getContentType());
         return key;
     }
 

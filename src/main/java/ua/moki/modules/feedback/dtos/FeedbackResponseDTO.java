@@ -6,6 +6,7 @@ public record FeedbackResponseDTO(
         Long id,
         String comment,
         Integer rating,
+        String type,
         String firstNameUser,
         String secondNameUser,
         String userImageUrl,

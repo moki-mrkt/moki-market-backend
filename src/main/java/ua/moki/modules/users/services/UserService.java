@@ -21,5 +21,5 @@ public interface UserService {
     UserResponseDTO getActiveUserByPublicId(UUID publicId);
     UserAdminResponseDTO getUserByPublicIdForAdmin(UUID publicId);
 
-    Page<UserAdminResponseDTO> getAllUser(Boolean isDeleted, Pageable pageable);
+    Page<UserAdminResponseDTO> getAllUser(String query, Boolean isDeleted, Pageable pageable);
 }

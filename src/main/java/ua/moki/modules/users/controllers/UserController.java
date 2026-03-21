@@ -116,11 +116,12 @@ public class UserController {
     @GetMapping("/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Page<UserAdminResponseDTO>> getAllUsers(
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) Boolean deleted,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<UserAdminResponseDTO> users = userService.getAllUser(deleted, PageRequest.of(page, size));
+        Page<UserAdminResponseDTO> users = userService.getAllUser(query, deleted, PageRequest.of(page, size));
         return ResponseEntity.ok(users);
     }
 

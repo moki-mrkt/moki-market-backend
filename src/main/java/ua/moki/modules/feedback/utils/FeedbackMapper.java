@@ -13,6 +13,8 @@ public interface FeedbackMapper {
     @Mapping(target = "firstNameUser", source = "user.firstName")
     @Mapping(target = "secondNameUser", source = "user.secondName")
     @Mapping(target = "userImageUrl", source = "user.imageId")
+    @Mapping(target = "type",
+            expression = "java(feedback instanceof ua.moki.modules.feedback.domains.ProductFeedback ? \"PRODUCT\" : \"STORE\")")
     FeedbackResponseDTO toDto(Feedback feedback);
 
     @Mapping(target = "firstNameUser", source = "user.firstName")

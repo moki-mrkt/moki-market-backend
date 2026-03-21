@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import ua.moki.modules.users.domains.User;
 import ua.moki.modules.users.domains.UserDeliveryInfo;
 import ua.moki.modules.users.dtos.*;
 import ua.moki.modules.users.repositories.UserRepository;
+import ua.moki.modules.users.services.UserSpecifications;
 import ua.moki.modules.users.services.tokens.ActivationTokenService;
 import ua.moki.modules.users.services.tokens.EmailTokenService;
 import ua.moki.modules.users.services.RefreshTokenService;
@@ -39,6 +41,7 @@ public class UserServiceImpl implements UserService {
     ActivationTokenService activationTokenService;
     PasswordEncoder passwordEncoder;
     FileStorageService fileStorageService;
+    UserSpecifications userSpecifications;
 
     ApplicationEventPublisher eventPublisher;
 
@@ -46,9 +49,9 @@ public class UserServiceImpl implements UserService {
     public UserServiceImpl(UserMapper userMapper,
                            UserRepository userRepository,
                            RefreshTokenService refreshTokenService,
-                           EmailTokenService emailTokenService,
                            ActivationTokenService activationTokenService,
                            PasswordEncoder passwordEncoder, FileStorageService fileStorageService,
+                           UserSpecifications userSpecifications,
                            ApplicationEventPublisher eventPublisher) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
@@ -56,6 +59,7 @@ public class UserServiceImpl implements UserService {
         this.activationTokenService = activationTokenService;
         this.passwordEncoder = passwordEncoder;
         this.fileStorageService = fileStorageService;
+        this.userSpecifications = userSpecifications;
         this.eventPublisher = eventPublisher;
     }
 
@@ -233,11 +237,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserAdminResponseDTO> getAllUser(Boolean isDeleted, Pageable pageable) {
+    public Page<UserAdminResponseDTO> getAllUser(String query, Boolean isDeleted, Pageable pageable) {
 
-        Page<User> userPage = isDeleted == null
-                ? userRepository.findAll(pageable)
-                : userRepository.findAllByDeleted(isDeleted, pageable);
+        Specification<User> spec = userSpecifications.getSpecifications(query, isDeleted);
+        Page<User> userPage = userRepository.findAll(spec, pageable);
 
         return userPage.map(userMapper::toAdminResponseDTO);
     }

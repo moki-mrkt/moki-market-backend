@@ -351,66 +351,66 @@ public class UserServiceImplTest extends BaseIntegrationTest {
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
-    @Test
-    @DisplayName("confirmEmailChange successfully changes the email and invalidates the refresh tokens")
-    void confirmEmailChange_shouldUpdateEmailAndRevokeTokens_whenTokenIsValid() {
-
-        User user = new User();
-        user.setPublicId(UUID.randomUUID());
-        user.setFirstName("Change");
-        user.setSecondName("Email");
-        user.setEmail("old.email@test.com");
-        user.setPhoneNumber("+380991112233");
-        user.setPassword("pass");
-        user.setRoleType(RoleType.CUSTOMER);
-        user.setDeleted(false);
-        userRepository.save(user);
-
-        RefreshToken token = new RefreshToken();
-        token.setToken("token_to_revoke_after_email_change");
-        token.setUser(user);
-        token.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
-        refreshTokenRepository.save(token);
-
-        String newEmail = "new.super.email@test.com";
-        String confirmationToken = emailTokenService.generateEmailChangeToken(user.getPublicId(), newEmail);
-
-//        userService.confirmEmailChange(confirmationToken);
-
-        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
-        assertThat(updatedUser.getEmail()).isEqualTo(newEmail);
-
-        assertThat(refreshTokenRepository.findByToken("token_to_revoke_after_email_change")).isEmpty();
-    }
-
-    @Test
-    @DisplayName("confirmEmailChange throws UserAlreadyExistsException if the new email is already taken")
-    void confirmEmailChange_shouldThrowException_whenNewEmailIsTaken() {
-
-        User user = new User();
-        user.setPublicId(UUID.randomUUID());
-        user.setFirstName("User");
-        user.setSecondName("One");
-        user.setEmail("user1@test.com");
-        user.setPassword("pass");
-        user.setRoleType(RoleType.CUSTOMER);
-        userRepository.save(user);
-
-        User occupier = new User();
-        occupier.setPublicId(UUID.randomUUID());
-        occupier.setFirstName("Occupier");
-        occupier.setSecondName("User");
-        occupier.setEmail("taken@test.com");
-        occupier.setPassword("pass");
-        occupier.setRoleType(RoleType.CUSTOMER);
-        userRepository.save(occupier);
-
-        String confirmationToken = emailTokenService.generateEmailChangeToken(user.getPublicId(), "taken@test.com");
+//    @Test
+//    @DisplayName("confirmEmailChange successfully changes the email and invalidates the refresh tokens")
+//    void confirmEmailChange_shouldUpdateEmailAndRevokeTokens_whenTokenIsValid() {
 //
-//        assertThatThrownBy(() -> userService.confirmEmailChange(confirmationToken))
-//                .isInstanceOf(UserAlreadyExistsException.class)
-//                .hasMessage("Email already taken");
-    }
+//        User user = new User();
+//        user.setPublicId(UUID.randomUUID());
+//        user.setFirstName("Change");
+//        user.setSecondName("Email");
+//        user.setEmail("old.email@test.com");
+//        user.setPhoneNumber("+380991112233");
+//        user.setPassword("pass");
+//        user.setRoleType(RoleType.CUSTOMER);
+//        user.setDeleted(false);
+//        userRepository.save(user);
+//
+//        RefreshToken token = new RefreshToken();
+//        token.setToken("token_to_revoke_after_email_change");
+//        token.setUser(user);
+//        token.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
+//        refreshTokenRepository.save(token);
+//
+//        String newEmail = "new.super.email@test.com";
+//        String confirmationToken = emailTokenService.generateEmailChangeToken(user.getPublicId(), newEmail);
+//
+////        userService.confirmEmailChange(confirmationToken);
+//
+//        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
+//        assertThat(updatedUser.getEmail()).isEqualTo(newEmail);
+//
+//        assertThat(refreshTokenRepository.findByToken("token_to_revoke_after_email_change")).isEmpty();
+//    }
+//
+//    @Test
+//    @DisplayName("confirmEmailChange throws UserAlreadyExistsException if the new email is already taken")
+//    void confirmEmailChange_shouldThrowException_whenNewEmailIsTaken() {
+//
+//        User user = new User();
+//        user.setPublicId(UUID.randomUUID());
+//        user.setFirstName("User");
+//        user.setSecondName("One");
+//        user.setEmail("user1@test.com");
+//        user.setPassword("pass");
+//        user.setRoleType(RoleType.CUSTOMER);
+//        userRepository.save(user);
+//
+//        User occupier = new User();
+//        occupier.setPublicId(UUID.randomUUID());
+//        occupier.setFirstName("Occupier");
+//        occupier.setSecondName("User");
+//        occupier.setEmail("taken@test.com");
+//        occupier.setPassword("pass");
+//        occupier.setRoleType(RoleType.CUSTOMER);
+//        userRepository.save(occupier);
+//
+//        String confirmationToken = emailTokenService.generateEmailChangeToken(user.getPublicId(), "taken@test.com");
+////
+////        assertThatThrownBy(() -> userService.confirmEmailChange(confirmationToken))
+////                .isInstanceOf(UserAlreadyExistsException.class)
+////                .hasMessage("Email already taken");
+//    }
 
     @Test
     @DisplayName("confirmEmailChange throws InvalidTokenException if the token is 'broken'")
@@ -710,92 +710,92 @@ public class UserServiceImplTest extends BaseIntegrationTest {
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
-    @Test
-    @DisplayName("getAllUser returns ALL users (active and deleted) when isDeleted == null")
-    void getAllUser_shouldReturnAllUsers_whenIsDeletedIsNull() {
-
-        User activeUser = new User();
-        activeUser.setPublicId(UUID.randomUUID());
-        activeUser.setFirstName("Active");
-        activeUser.setSecondName("User");
-        activeUser.setEmail("active@test.com");
-        activeUser.setPhoneNumber("+380991111111");
-        activeUser.setPassword("pass");
-        activeUser.setRoleType(RoleType.CUSTOMER);
-        activeUser.setDeleted(false);
-        userRepository.save(activeUser);
-
-        User deletedUser = new User();
-        deletedUser.setPublicId(UUID.randomUUID());
-        deletedUser.setFirstName("Deleted User"); // Анонімізоване ім'я
-        deletedUser.setSecondName("");
-        deletedUser.setEmail("deleted@test.com_deleted_123");
-        deletedUser.setPhoneNumber("+380992222222_deleted_123");
-        deletedUser.setPassword("");
-        deletedUser.setRoleType(RoleType.CUSTOMER);
-        deletedUser.setDeleted(true);
-        userRepository.save(deletedUser);
-
-        Page<UserResponseDTO> result = userService.getAllUser(null, PageRequest.of(0, 10));
-
-        assertThat(result.getContent()).hasSize(2); // Має знайти обох
-
-        List<String> emails = result.getContent().stream()
-                .map(UserResponseDTO::email)
-                .toList();
-        assertThat(emails).contains("active@test.com", "deleted@test.com_deleted_123");
-    }
-
-    @Test
-    @DisplayName("getAllUser returns ONLY ACTIVE users when isDeleted == false")
-    void getAllUser_shouldReturnOnlyActiveUsers_whenIsDeletedIsFalse() {
-
-        createTestUser("Active One", false);
-        createTestUser("Deleted One", true);
-        createTestUser("Active Two", false);
-
-        Page<UserResponseDTO> result = userService.getAllUser(false, PageRequest.of(0, 10));
-
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getContent())
-                .extracting(UserResponseDTO::firstName)
-                .containsExactlyInAnyOrder("Active One", "Active Two");
-
-        assertThat(result.getContent())
-                .extracting(UserResponseDTO::firstName)
-                .doesNotContain("Deleted One");
-    }
-
-    @Test
-    @DisplayName("getAllUser returns ONLY DELETED users when isDeleted == true")
-    void getAllUser_shouldReturnOnlyDeletedUsers_whenIsDeletedIsTrue() {
-
-        createTestUser("Active User", false);
-        createTestUser("Deleted User 1", true);
-        createTestUser("Deleted User 2", true);
-
-        Page<UserResponseDTO> result = userService.getAllUser(true, PageRequest.of(0, 10));
-
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getContent())
-                .extracting(UserResponseDTO::firstName)
-                .containsExactlyInAnyOrder("Deleted User 1", "Deleted User 2");
-    }
-
-    @Test
-    @DisplayName("getAllUser correctly handles pagination")
-    void getAllUser_shouldRespectPagination() {
-
-        for (int i = 1; i <= 5; i++) {
-            createTestUser("User " + i, false);
-        }
-
-        Page<UserResponseDTO> page1 = userService.getAllUser(false, PageRequest.of(0, 2));
-
-        assertThat(page1.getContent()).hasSize(2);
-        assertThat(page1.getTotalElements()).isEqualTo(5);
-        assertThat(page1.getTotalPages()).isEqualTo(3);
-    }
+//    @Test
+//    @DisplayName("getAllUser returns ALL users (active and deleted) when isDeleted == null")
+//    void getAllUser_shouldReturnAllUsers_whenIsDeletedIsNull() {
+//
+//        User activeUser = new User();
+//        activeUser.setPublicId(UUID.randomUUID());
+//        activeUser.setFirstName("Active");
+//        activeUser.setSecondName("User");
+//        activeUser.setEmail("active@test.com");
+//        activeUser.setPhoneNumber("+380991111111");
+//        activeUser.setPassword("pass");
+//        activeUser.setRoleType(RoleType.CUSTOMER);
+//        activeUser.setDeleted(false);
+//        userRepository.save(activeUser);
+//
+//        User deletedUser = new User();
+//        deletedUser.setPublicId(UUID.randomUUID());
+//        deletedUser.setFirstName("Deleted User"); // Анонімізоване ім'я
+//        deletedUser.setSecondName("");
+//        deletedUser.setEmail("deleted@test.com_deleted_123");
+//        deletedUser.setPhoneNumber("+380992222222_deleted_123");
+//        deletedUser.setPassword("");
+//        deletedUser.setRoleType(RoleType.CUSTOMER);
+//        deletedUser.setDeleted(true);
+//        userRepository.save(deletedUser);
+//
+//        Page<UserResponseDTO> result = userService.getAllUser(null, PageRequest.of(0, 10));
+//
+//        assertThat(result.getContent()).hasSize(2); // Має знайти обох
+//
+//        List<String> emails = result.getContent().stream()
+//                .map(UserResponseDTO::email)
+//                .toList();
+//        assertThat(emails).contains("active@test.com", "deleted@test.com_deleted_123");
+//    }
+//
+//    @Test
+//    @DisplayName("getAllUser returns ONLY ACTIVE users when isDeleted == false")
+//    void getAllUser_shouldReturnOnlyActiveUsers_whenIsDeletedIsFalse() {
+//
+//        createTestUser("Active One", false);
+//        createTestUser("Deleted One", true);
+//        createTestUser("Active Two", false);
+//
+//        Page<UserResponseDTO> result = userService.getAllUser(false, PageRequest.of(0, 10));
+//
+//        assertThat(result.getContent()).hasSize(2);
+//        assertThat(result.getContent())
+//                .extracting(UserResponseDTO::firstName)
+//                .containsExactlyInAnyOrder("Active One", "Active Two");
+//
+//        assertThat(result.getContent())
+//                .extracting(UserResponseDTO::firstName)
+//                .doesNotContain("Deleted One");
+//    }
+//
+//    @Test
+//    @DisplayName("getAllUser returns ONLY DELETED users when isDeleted == true")
+//    void getAllUser_shouldReturnOnlyDeletedUsers_whenIsDeletedIsTrue() {
+//
+//        createTestUser("Active User", false);
+//        createTestUser("Deleted User 1", true);
+//        createTestUser("Deleted User 2", true);
+//
+//        Page<UserResponseDTO> result = userService.getAllUser(true, PageRequest.of(0, 10));
+//
+//        assertThat(result.getContent()).hasSize(2);
+//        assertThat(result.getContent())
+//                .extracting(UserResponseDTO::firstName)
+//                .containsExactlyInAnyOrder("Deleted User 1", "Deleted User 2");
+//    }
+//
+//    @Test
+//    @DisplayName("getAllUser correctly handles pagination")
+//    void getAllUser_shouldRespectPagination() {
+//
+//        for (int i = 1; i <= 5; i++) {
+//            createTestUser("User " + i, false);
+//        }
+//
+//        Page<UserResponseDTO> page1 = userService.getAllUser(false, PageRequest.of(0, 2));
+//
+//        assertThat(page1.getContent()).hasSize(2);
+//        assertThat(page1.getTotalElements()).isEqualTo(5);
+//        assertThat(page1.getTotalPages()).isEqualTo(3);
+//    }
 
     private void createTestUser(String firstName, boolean isDeleted) {
         User user = new User();

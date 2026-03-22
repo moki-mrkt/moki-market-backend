@@ -55,7 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users/password-reset/initiate").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/profile/email/confirm").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/users/activation").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/activation").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/orders").permitAll()

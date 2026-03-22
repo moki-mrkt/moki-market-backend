@@ -108,9 +108,14 @@ public class UserController {
 
     @GetMapping("/profile")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<UserResponseDTO> getUserById(Principal principal) {
-        UserResponseDTO user = userService.getActiveUserByPublicId(UUID.fromString(principal.getName()));
-        return ResponseEntity.ok(user);
+    public ResponseEntity<UserResponseDTO> getUserById(@NotNull Principal principal) {
+        return ResponseEntity.ok(userService.getActiveUserByPublicId(UUID.fromString(principal.getName())));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<UserAdminResponseDTO> getUserByIdForAdmin(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getUserByPublicIdForAdmin(id));
     }
 
     @GetMapping("/all")

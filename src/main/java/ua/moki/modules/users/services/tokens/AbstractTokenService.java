@@ -2,6 +2,7 @@ package ua.moki.modules.users.services.tokens;
 
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.modules.users.domains.User;
+import ua.moki.modules.users.domains.tokens.ActivationToken;
 import ua.moki.modules.users.domains.tokens.BaseToken;
 import ua.moki.modules.users.repositories.BaseTokenRepository;
 import ua.moki.util.exceptions.InvalidTokenException;

@@ -202,6 +202,6 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getAllOrders(int page, int size) {
-        return orderRepository.findAll(PageRequest.of(page, size, Sort.by("createAt"))).map(orderMapper::toDto);
+        return orderRepository.findAll(PageRequest.of(page, size, Sort.by("createAt").descending())).map(orderMapper::toDto);
     }
 }

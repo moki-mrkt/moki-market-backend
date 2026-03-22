@@ -48,3 +48,11 @@ databaseChangeLog:
         - dropColumn:
             tableName: activation_tokens
             columnName: used
+  - changeSet:
+      id: update-id-type
+      author: KyryloPyvovarov
+      changes:
+        - modifyDataType:
+            tableName: activation_tokens
+            columnName: id
+            newDataType: UUID

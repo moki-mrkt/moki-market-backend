@@ -35,6 +35,7 @@ import ua.moki.util.exceptions.InvalidTokenException;
 import ua.moki.util.exceptions.TooManyRequestsException;
 import ua.moki.util.exceptions.UserAlreadyExistsException;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,6 +46,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AccountSecurityServiceImpl  implements AccountSecurityService {
 
+    Clock clock;
     UserRepository userRepository;
 
     ResetPasswordTokenFactory resetTokenFactory;
@@ -69,11 +71,10 @@ public class AccountSecurityServiceImpl  implements AccountSecurityService {
 
         ActivationToken activationToken = activationTokenService.findByToken(token);
 
-        if (activationToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+        if (activationToken.getExpiresAt().isBefore(OffsetDateTime.now(clock))) {
             activationTokenService.deleteToken(activationToken);
             throw new InvalidTokenException("Activation token has expired");
         }
-
         User user = activationToken.getUser();
         user.setActivated(true);
         userRepository.save(user);
@@ -137,11 +138,7 @@ public class AccountSecurityServiceImpl  implements AccountSecurityService {
         User user = getActiveUserEntityByPublicId(userId);
 
         if (!passwordEncoder.matches(dto.currentPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid current password");
-        }
-
-        if (passwordEncoder.matches(dto.password(), user.getPassword())) {
-            throw new IllegalArgumentException("New password cannot be the same as old password");
+            throw new BadCredentialsException("Wrong password");
         }
 
         user.setPassword(passwordEncoder.encode(dto.password()));

@@ -15,6 +15,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.infrastructure.storage.service.FileStorageService;
+import ua.moki.modules.orders.repositories.CartItemRepository;
+import ua.moki.modules.orders.repositories.CartRepository;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
 import ua.moki.modules.products.dtos.*;
@@ -40,7 +42,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final Clock clock;
     private final ProductMapper productMapper;
-    private final FileStorageService fileStorageService;
+    private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final ProductSpecifications productSpecifications;
     private final FavoriteProductRepository favoriteProductRepository;
@@ -54,13 +56,13 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     public ProductServiceImpl(Clock clock,
                               ProductMapper productMapper,
-                              FileStorageService fileStorageService,
+                              CartItemRepository cartItemRepository,
                               ProductRepository productRepository,
                               ProductSpecifications productSpecifications,
                               FavoriteProductRepository favoriteProductRepository) {
         this.clock = clock;
         this.productMapper = productMapper;
-        this.fileStorageService = fileStorageService;
+        this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
         this.productSpecifications = productSpecifications;
         this.favoriteProductRepository = favoriteProductRepository;
@@ -110,22 +112,10 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = findById(productId);
 
-        if (product.getSalesCount() > 0) {
+        product.setAvailability(ProductAvailability.ARCHIVED);
+        productRepository.save(product);
 
-            product.setAvailability(ProductAvailability.ARCHIVED);
-            productRepository.save(product);
-        } else {
-
-            log.info("Product {} has NO orders. Performing hard delete.", productId);
-
-            List<String> imageKeys = product.getImages().stream()
-                    .map(ProductImage::getImageId)
-                    .toList();
-
-            productRepository.delete(product);
-
-            if (!imageKeys.isEmpty()) fileStorageService.deleteAllFiles(imageKeys);
-        }
+        cartItemRepository.deleteByProduct(product);
     }
 
     @Override
@@ -186,14 +176,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> getAllProductByCategory(ProductCategory productCategory, int page, int size) {
-        return productRepository.findAllByProductCategory(productCategory, PageRequest.of(page, size)).map(getProductMapperFunction());
+        return productRepository.findAllByProductCategoryAndAvailability(productCategory, ProductAvailability.IN_STOCK, PageRequest.of(page, size)).map(getProductMapperFunction());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> getNewProducts(int page, int size) {
 
-        return productRepository.findAll(PageRequest.of(page, size, Sort.by("creationTime").descending()))
+        Pageable pageable = PageRequest.of(page, size, Sort.by("creationTime").descending());
+
+        return productRepository.findAllByAvailability(pageable, ProductAvailability.IN_STOCK)
                 .map(getProductMapperFunction());
     }
 
@@ -207,7 +199,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> getBestsellers(int page, int size) {
-        return productRepository.findAll(PageRequest.of(page, size, Sort.by("salesCount").descending()))
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("salesCount").descending());
+
+        return productRepository.findAllByAvailability(pageable, ProductAvailability.IN_STOCK)
                 .map(getProductMapperFunction());
     }
 
@@ -216,17 +211,34 @@ public class ProductServiceImpl implements ProductService {
     public SearchResponse searchProducts(ProductSearchRequestDTO request, Pageable pageable) {
 
         Specification<Product> productSpec = productSpecifications.getSpecifications(request, false);
-        Specification<Product> facetSpec = productSpecifications.getSpecifications(request, true);
 
+        productSpec = productSpec.and((root, query, cb) ->
+                cb.notEqual(root.get("availability"), ProductAvailability.ARCHIVED)
+        );
 
-        Page<Product> products = productRepository.findAll(productSpec, pageable);
+        Sort prioritySort = Sort.by(Sort.Order.asc("availability"))
+                .and(pageable.getSort());
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                prioritySort
+        );
+
+        Page<Product> products = productRepository.findAll(productSpec, sortedPageable);
+
+        Specification<Product> facetSpec = productSpecifications.getSpecifications(request, true)
+                .and((root, query, cb) -> cb.notEqual(root.get("availability"), ProductAvailability.ARCHIVED));
+
         List<String> subcategories = productRepository.findDistinctSubcategoriesBySpec(facetSpec);
 
-        ProductSearchRequestDTO limitRequest = new ProductSearchRequestDTO(request.query(), request.category(),
-                null, null,
-                request.subcategory(), request.hasDiscount());
+        ProductSearchRequestDTO limitRequest = new ProductSearchRequestDTO(
+                request.query(), request.category(), null, null,
+                request.subcategory(), request.hasDiscount()
+        );
 
-        Specification<Product> limitSpec = productSpecifications.getSpecifications(limitRequest, false);
+        Specification<Product> limitSpec = productSpecifications.getSpecifications(limitRequest, false)
+                .and((root, query, cb) -> cb.notEqual(root.get("availability"), ProductAvailability.ARCHIVED));
 
         Map<String, Double> minMax = productSpecifications.getMinMaxPricesBySpecification(limitSpec);
 

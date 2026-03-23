@@ -34,6 +34,5 @@ public class CartItem {
     @Column(name = "create_at")
     private OffsetDateTime createAt;
 
-
 }
 

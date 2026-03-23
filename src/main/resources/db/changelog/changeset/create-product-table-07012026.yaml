@@ -173,3 +173,28 @@ databaseChangeLog:
             tableName: products
             columnName: name
             newDataType: VARCHAR(255)
+  - changeSet:
+      id: add-product-indexes
+      author: KyryloPyvovarov
+      changes:
+        - createIndex:
+            indexName: idx_product_category_sub
+            tableName: products
+            columns:
+              - column: { name: product_category }
+              - column: { name: subcategory }
+        - createIndex:
+            indexName: idx_product_creation_time
+            tableName: products
+            columns:
+              - column: { name: creation_time }
+        - createIndex:
+            indexName: idx_product_price_with_discount
+            tableName: products
+            columns:
+              - column: { name: price_with_discount }
+        - createIndex:
+            indexName: idx_product_sales_count
+            tableName: products
+            columns:
+              - column: { name: sales_count }

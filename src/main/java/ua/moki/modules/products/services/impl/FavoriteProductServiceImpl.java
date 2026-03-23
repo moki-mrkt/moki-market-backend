@@ -2,7 +2,9 @@ package ua.moki.modules.products.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.modules.products.domains.FavoriteProduct;
@@ -68,7 +70,17 @@ public class FavoriteProductServiceImpl implements FavoriteProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> getFavoriteProductsByUserId(UUID userId, Pageable pageable) {
-        return favoriteProductRepository.findByUser_PublicId(userId, pageable)
+
+        Sort prioritySort = Sort.by(Sort.Order.desc("product.availability"))
+                .and(pageable.getSort());
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                prioritySort
+        );
+
+        return favoriteProductRepository.findByUser_PublicId(userId, sortedPageable)
                 .map(FavoriteProduct::getProduct)
                 .map(product -> productMapper.toResponseDTO(product, true));
     }

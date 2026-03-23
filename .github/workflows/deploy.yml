@@ -11,14 +11,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Copy project files to Hetzner
+      - name: Copy Backend files to Server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           source: "."
-          target: "~/moki-app"
+          target: "~/moki-app/moki-market-backend"
 
       - name: Build and Run with Docker Compose
         uses: appleboy/ssh-action@master
@@ -29,10 +29,12 @@ jobs:
           script: |
             cd ~/moki-app
             
+            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
             echo "DB_USER=${{ secrets.DB_USER }}" > .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
             echo "REFRESH_SECRET=${{ secrets.REFRESH_SECRET }}" >> .env
+            echo "R2_PUBLIC_URL=${{ secrets.R2_PUBLIC_URL }}" >> .env
             echo "R2_ACCESS_KEY=${{ secrets.R2_ACCESS_KEY }}" >> .env
             echo "R2_SECRET_KEY=${{ secrets.R2_SECRET_KEY }}" >> .env
             echo "R2_ENDPOINT=${{ secrets.R2_ENDPOINT }}" >> .env

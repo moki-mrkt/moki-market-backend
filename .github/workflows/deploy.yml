@@ -46,7 +46,6 @@ jobs:
             echo "BOT_CHAT_ID=${{ secrets.BOT_CHAT_ID }}" >> .env
 
             docker compose -f docker-compose.prod.yml stop backend
-            docker compose -f docker-compose.prod.yml rm -f backend
             docker compose -f docker-compose.prod.yml up -d --build backend
             
             docker image prune -f

@@ -3,7 +3,6 @@ package ua.moki.infrastructure.storage.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,8 +12,6 @@ import software.amazon.awssdk.services.s3.model.*;
 import ua.moki.infrastructure.storage.service.FileStorageService;
 import ua.moki.util.ImageConverter;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;

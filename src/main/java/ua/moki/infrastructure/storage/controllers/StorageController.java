@@ -2,6 +2,7 @@ package ua.moki.infrastructure.storage.controllers;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StorageController {
 
+    @Value("${s3.public_url}")
+    private String urlBucket;
     private final FileStorageService fileStorageService;
 
 
@@ -27,7 +30,7 @@ public class StorageController {
 
         return ResponseEntity.ok(Map.of(
                 "imageId", imageId,
-                "url", "http://localhost:9000/moki-images/products/" + imageId + "_medium.webp"
+                "url", urlBucket + "products/" + imageId + "_medium.webp"
         ));
     }
 
@@ -41,7 +44,7 @@ public class StorageController {
 
         return ResponseEntity.ok(Map.of(
                 "key", key,
-                "url", "http://localhost:9000/moki-images/" + key
+                "url", urlBucket +  key
         ));
     }
 

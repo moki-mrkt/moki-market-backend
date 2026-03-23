@@ -2,11 +2,10 @@
 FROM gradle:8-jdk17 AS build
 WORKDIR /app
 COPY . .
-# Пропускаємо тести для швидшої збірки, але краще їх фіксити
+
 RUN gradle clean build -x test --no-daemon
 
-# Етап 2: Запуск (Run)
-FROM openjdk:17-alpine
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080

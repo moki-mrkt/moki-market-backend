@@ -29,9 +29,9 @@ jobs:
           script: |
             cd ~/moki-app
             
-            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
             echo "DB_USER=${{ secrets.DB_USER }}" > .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
             echo "REFRESH_SECRET=${{ secrets.REFRESH_SECRET }}" >> .env
             echo "R2_PUBLIC_URL=${{ secrets.R2_PUBLIC_URL }}" >> .env

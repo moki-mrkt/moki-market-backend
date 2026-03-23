@@ -2,7 +2,7 @@ name: Deploy Moki Market
 
 on:
   push:
-    branches: [ main ] # Деплой запускається при пуші в main
+    branches: [ master ]
 
 jobs:
   deploy:

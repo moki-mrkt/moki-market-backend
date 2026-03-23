@@ -1,0 +1,46 @@
+name: Deploy Moki Market
+
+on:
+  push:
+    branches: [ main ] # Деплой запускається при пуші в main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copy project files to Hetzner
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "."
+          target: "~/moki-app"
+
+      - name: Build and Run with Docker Compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/moki-app
+            
+            echo "DB_USER=${{ secrets.DB_USER }}" > .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "REFRESH_SECRET=${{ secrets.REFRESH_SECRET }}" >> .env
+            echo "R2_ACCESS_KEY=${{ secrets.R2_ACCESS_KEY }}" >> .env
+            echo "R2_SECRET_KEY=${{ secrets.R2_SECRET_KEY }}" >> .env
+            echo "R2_ENDPOINT=${{ secrets.R2_ENDPOINT }}" >> .env
+            echo "R2_BUCKET_NAME=${{ secrets.R2_BUCKET_NAME }}" >> .env
+            echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
+            echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
+            echo "BOT_NAME=${{ secrets.BOT_NAME }}" >> .env
+            echo "BOT_KEY=${{ secrets.BOT_KEY }}" >> .env
+            echo "BOT_CHAT_ID=${{ secrets.BOT_CHAT_ID }}" >> .env
+
+            docker compose -f docker-compose.prod.yaml up -d --build backend

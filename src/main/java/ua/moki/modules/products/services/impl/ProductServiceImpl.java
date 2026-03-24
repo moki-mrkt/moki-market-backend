@@ -14,11 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ua.moki.infrastructure.storage.service.FileStorageService;
 import ua.moki.modules.orders.repositories.CartItemRepository;
-import ua.moki.modules.orders.repositories.CartRepository;
 import ua.moki.modules.products.domains.Product;
-import ua.moki.modules.products.domains.ProductImage;
 import ua.moki.modules.products.dtos.*;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
@@ -33,7 +30,10 @@ import ua.moki.util.exceptions.EntityNotFoundException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Slf4j
@@ -100,6 +100,9 @@ public class ProductServiceImpl implements ProductService {
         Product product = findById(productId);
 
         productMapper.updateEntityFromDto(productRequestDTO, product);
+
+        String newProductSlug = slugify.slugify(product.getName());
+        product.setSlug(newProductSlug);
 
         Product savedProduct = productRepository.save(product);
 

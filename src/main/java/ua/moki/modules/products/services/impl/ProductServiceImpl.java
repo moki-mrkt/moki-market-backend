@@ -99,12 +99,14 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = findById(productId);
 
+        log.info("new slug update: {}", product.getSlug());
         productMapper.updateEntityFromDto(productRequestDTO, product);
 
         String newProductSlug = slugify.slugify(product.getName());
         product.setSlug(newProductSlug);
 
         Product savedProduct = productRepository.save(product);
+        log.info("new slug updated: {}", savedProduct.getSlug());
 
         return getProductMapperFunction().apply(savedProduct);
     }

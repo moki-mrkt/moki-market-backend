@@ -6,17 +6,16 @@ import ua.moki.modules.users.domains.UserDeliveryInfo;
 import ua.moki.modules.users.dtos.*;
 
 @Mapper(componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {ImageMapper.class}
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface UserMapper {
 
     @Mapping(target = "id", source = "publicId")
-    @Mapping(target = "imageUrl", source = "imageId", qualifiedByName = "toFullUrl")
+    @Mapping(target = "imageUrl", source = "imageId")
     UserResponseDTO toResponseDTO(User user);
 
     @Mapping(target = "id", source = "publicId")
-    @Mapping(target = "imageUrl", source = "imageId", qualifiedByName = "toFullUrl")
+    @Mapping(target = "imageUrl", source = "imageId")
     UserAdminResponseDTO toAdminResponseDTO(User user);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

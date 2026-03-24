@@ -56,9 +56,12 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     @SneakyThrows
     public String uploadUserPhoto(MultipartFile file, String folder) {
-        String key = folder + "/" + UUID.randomUUID() + getExtension(file.getOriginalFilename());
+        String baseUuid = UUID.randomUUID().toString();
 
-        uploadToS3(key, file.getBytes(), file.getContentType());
+        String key = folder + "/" + baseUuid +  ".webp";
+        byte[] processedImage = imageConverter.resizeAndConvertToWebp(file.getBytes(), ImageConverter.ImageSize.MEDIUM);
+        uploadToS3(key, processedImage, "image/webp");
+
         return key;
     }
 

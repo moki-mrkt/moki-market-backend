@@ -4,6 +4,7 @@ public enum ProductCategory {
     DRIED_FRUITS,
     NUTS,
     SWEETS,
+    CANDIES,
     SUPER_FOOD,
     OIL_AND_BUTTERS,
     CONSERVATION,

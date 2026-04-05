@@ -33,7 +33,7 @@ public abstract class CartMapper {
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
     @Mapping(target = "productPrice", source = "product.price")
-    @Mapping(target = "productImage", source = "product", qualifiedByName = "getMainImageId") // source змінено на "product"
+    @Mapping(target = "productImage", source = "product", qualifiedByName = "getMainImageId")
     @Mapping(target = "quantity", source = "quantity")
     @Mapping(target = "currentPrice", source = "product", qualifiedByName = "calculateFinalPricePerUnit")
     @Mapping(target = "totalPrice", source = ".", qualifiedByName = "calculateItemTotal")

@@ -19,7 +19,6 @@ import ua.moki.modules.users.dtos.*;
 import ua.moki.modules.users.repositories.UserRepository;
 import ua.moki.modules.users.services.UserSpecifications;
 import ua.moki.modules.users.services.tokens.ActivationTokenService;
-import ua.moki.modules.users.services.tokens.EmailTokenService;
 import ua.moki.modules.users.services.RefreshTokenService;
 import ua.moki.modules.users.services.UserService;
 import ua.moki.modules.users.utils.enums.RoleType;

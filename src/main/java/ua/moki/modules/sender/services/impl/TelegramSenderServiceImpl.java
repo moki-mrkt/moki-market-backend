@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ua.moki.configuration.TelegramConfig;
 import ua.moki.modules.orders.dtos.AddressDTO;
@@ -16,6 +18,7 @@ import ua.moki.modules.orders.utils.enums.DeliveryType;
 import ua.moki.modules.orders.utils.enums.PaymentType;
 import ua.moki.modules.sender.services.TelegramSenderService;
 
+import java.io.File;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -37,7 +40,7 @@ public class TelegramSenderServiceImpl extends DefaultAbsSender implements Teleg
     @Override
     public void sendMessageAboutNewOrder(OrderResponseDTO responseDTO) {
         SendMessage telegramMessage = new SendMessage();
-        telegramMessage.setChatId(telegramConfig.getChatId());
+        telegramMessage.setChatId(telegramConfig.getOrderChatId());
         telegramMessage.setParseMode("HTML");
 
         String formattedDate = responseDTO.createAt().toString().replace("T", " ").substring(0, 16);
@@ -78,6 +81,22 @@ public class TelegramSenderServiceImpl extends DefaultAbsSender implements Teleg
         } catch (TelegramApiException e) {
             log.error("Failed to send telegram message", e);
         }
+    }
+
+    public void sendPhotoToTelegram(File photo) {
+
+        System.out.println(telegramConfig.getPhotoChatId());
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(telegramConfig.getPhotoChatId());
+        sendPhoto.setPhoto(new InputFile(photo));
+
+        try {
+            execute(sendPhoto);
+            log.info("Send photo with watermark to telegram group [%s]".formatted(telegramConfig.getOrderChatId()));
+        } catch (TelegramApiException e) {
+            log.error("Failed to send photo to telegram", e);
+        }
+
     }
 
     private String formatOrderItems(List<OrderItemDTO> items) {

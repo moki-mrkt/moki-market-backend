@@ -49,7 +49,7 @@ class TelegramSenderServiceImplTest {
     void sendMessageAboutNewOrder_shouldSendCorrectFormattedMessage() throws TelegramApiException {
 
         String chatId = "123456";
-        when(telegramConfig.getChatId()).thenReturn(chatId);
+        when(telegramConfig.getOrderChatId()).thenReturn(chatId);
 
 
         OrderResponseDTO order = createSimpleOrder();
@@ -74,7 +74,7 @@ class TelegramSenderServiceImplTest {
     @DisplayName("Should handle TelegramApiException and log error")
     void sendMessageAboutNewOrder_shouldHandleException() throws TelegramApiException {
 
-        when(telegramConfig.getChatId()).thenReturn("123");
+        when(telegramConfig.getOrderChatId()).thenReturn("123");
         OrderResponseDTO order = createSimpleOrder();
 
         doThrow(new TelegramApiException("API Error")).when(telegramSenderService).execute(any(SendMessage.class));
@@ -85,7 +85,7 @@ class TelegramSenderServiceImplTest {
     }
 
     private OrderResponseDTO createSimpleOrder() {
-        OrderItemDTO item = new OrderItemDTO( 1L, "Laptop", new BigDecimal("25000"), 1, new BigDecimal("25000"));
+        OrderItemDTO item = new OrderItemDTO( 1L, "Laptop", new BigDecimal("25000"),  new BigDecimal("20000"), 1, new BigDecimal("25000"));
         AddressDTO address = new AddressDTO("Kyiv", "Kyiv region", "1", "Main St", "10", "5");
         return new OrderResponseDTO(
                 UUID.randomUUID(), "NUM", OffsetDateTime.now(), OrderStatus.NEW, PaymentType.CARD, PaymentStatus.SUCCESS,

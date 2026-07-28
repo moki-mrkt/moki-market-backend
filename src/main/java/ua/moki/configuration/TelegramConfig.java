@@ -14,8 +14,10 @@ public class TelegramConfig {
     private String botName;
     @Value("${bot.key}")
     private String token;
-    @Value("${bot.chat.id}")
-    private String chatId;
+    @Value("${bot.order.chat.id}")
+    private String orderChatId;
+    @Value("${bot.photo.chat.id}")
+    private String photoChatId;
 
     @Bean
     public DefaultBotOptions defaultBotOptions() {

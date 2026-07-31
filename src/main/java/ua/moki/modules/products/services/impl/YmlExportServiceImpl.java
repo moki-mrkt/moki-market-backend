@@ -73,6 +73,7 @@ public class YmlExportServiceImpl implements YmlExportService {
            xml.append("                <price_old>").append(priceForRozetka.add(BigDecimal.TEN)).append("</price_old>\n");
            xml.append("                <price_promo>").append(priceForRozetka.subtract(BigDecimal.TEN)).append("</price_promo>\n");
 
+           xml.append("                <article>").append(product.getId() + 100).append("</article>\n");
            xml.append("                <stock_quantity>100</stock_quantity>\n");
            xml.append("                <url>:").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
            xml.append("                <currencyId>UAH</currencyId>\n");
@@ -83,7 +84,6 @@ public class YmlExportServiceImpl implements YmlExportService {
                 xml.append("                <picture>").append(imageUrl).append("</picture>\n");
             }
 
-            // Дані про товар[cite: 1]
             xml.append("                <vendor><![CDATA[").append(product.getManufacturerOfTheProduct()).append("]]></vendor>\n");
             xml.append("                <name><![CDATA[").append(product.getName()).append("]]></name>\n");
             xml.append("                <description><![CDATA[").append(product.getDescription()).append("]]></description>\n");

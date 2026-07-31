@@ -1,6 +1,5 @@
 package ua.moki.infrastructure.storage.controllers;
 
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ua.moki.infrastructure.storage.service.FileStorageService;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -30,7 +28,7 @@ public class StorageController {
 
         return ResponseEntity.ok(Map.of(
                 "imageId", imageId,
-                "url", urlBucket + "products/" + imageId + "_medium.webp"
+                "url", urlBucket + imageId + "_medium.webp"
         ));
     }
 

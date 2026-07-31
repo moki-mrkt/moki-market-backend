@@ -63,7 +63,7 @@ public abstract class CartMapper {
                 .orElse(product.getImages().getFirst())
                 .getImageId();
 
-        return storageUrl.endsWith("/") ? storageUrl + imageId : storageUrl + "/" + imageId;
+        return storageUrl + imageId;
     }
 
     @Named("calculateFinalPricePerUnit")

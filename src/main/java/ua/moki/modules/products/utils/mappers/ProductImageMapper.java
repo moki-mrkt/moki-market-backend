@@ -19,6 +19,6 @@ public abstract class ProductImageMapper {
     @Named("mapToUrl")
     protected String mapToUrl(String imageId) {
         if (imageId == null) return null;
-        return storageUrl + "/" + imageId;
+        return storageUrl + imageId;
     }
 }

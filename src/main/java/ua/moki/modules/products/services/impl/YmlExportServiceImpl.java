@@ -68,17 +68,18 @@ public class YmlExportServiceImpl implements YmlExportService {
         for (Product product : products) {
             xml.append("            <offer id=\"").append(product.getId()).append("\" available=\"true\">\n");
 
-           BigDecimal priceForRozetka = product.getPrice().multiply(new BigDecimal("1.165")).setScale(0, RoundingMode.HALF_UP);
+           BigDecimal priceForRozetka = calculatePrice(product);
            xml.append("                <price>").append(priceForRozetka).append("</price>\n");
            xml.append("                <price_old>").append(priceForRozetka.add(BigDecimal.TEN)).append("</price_old>\n");
            xml.append("                <price_promo>").append(priceForRozetka.subtract(BigDecimal.TEN)).append("</price_promo>\n");
+
            xml.append("                <stock_quantity>100</stock_quantity>\n");
            xml.append("                <url>:").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
            xml.append("                <currencyId>UAH</currencyId>\n");
            xml.append("                <categoryId>101</categoryId>\n"); // Відповідає category id вище
 
             for (ProductImage image : product.getImages()) {
-                String imageUrl = storageUrl.endsWith("/") ? storageUrl + image.getImageId() : storageUrl + "/" + image.getImageId();
+                String imageUrl = storageUrl + image.getImageId();
                 xml.append("                <picture>").append(imageUrl).append("</picture>\n");
             }
 
@@ -108,12 +109,12 @@ public class YmlExportServiceImpl implements YmlExportService {
                                         </param>
                     """);
 
-            xml.append("""
-                                        <param name="Состав" paramid="223843" valueid="14">
-                                            <value lang="uk">Волоський горіх</value>
-                                            <value lang="ru">Грецкий орех</value>
-                                        </param>
-                    """);
+//            xml.append("""
+//                                        <param name="Состав" paramid="223843" valueid="14">
+//                                            <value lang="uk">Волоський горіх</value>
+//                                            <value lang="ru">Грецкий орех</value>
+//                                        </param>
+//                    """);
 
             xml.append("""
                                         <param name="Вес" paramid="147016" valueid="15">
@@ -174,5 +175,34 @@ public class YmlExportServiceImpl implements YmlExportService {
         xml.append("</yml_catalog>");
 
         return xml.toString();
+    }
+
+    private BigDecimal calculatePrice(Product product) {
+
+        BigDecimal initialPrice = product.getPrice()
+                .multiply(new BigDecimal("1.165"))
+                .setScale(0, RoundingMode.HALF_UP);
+        
+        BigDecimal purchasePrice = product.getPurchasePrice();
+        
+        BigDecimal priceMinus16Percent = initialPrice.multiply(new BigDecimal("0.84"));
+
+        BigDecimal profit = priceMinus16Percent.subtract(purchasePrice);
+
+        long currentVal = initialPrice.longValue();
+        long remainder = currentVal % 10;
+        long finalPriceValue;
+
+        if (profit.compareTo(new BigDecimal("35")) < 0) {
+            finalPriceValue = currentVal + (9 - remainder);
+        } else {
+            if (remainder == 9) {
+                finalPriceValue = currentVal;
+            } else {
+                finalPriceValue = currentVal - remainder - 1;
+            }
+        }
+
+        return BigDecimal.valueOf(finalPriceValue);
     }
 }

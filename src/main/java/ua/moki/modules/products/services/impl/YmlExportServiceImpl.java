@@ -241,7 +241,7 @@ public class YmlExportServiceImpl implements YmlExportService {
                                         <param name="Країна виробник">Україна</param>
                     """);
 
-            xml.append("                <param name=\"Підкатегорія\"><![CDATA[").append(product.getSubcategory()).append("]]></param>\n");
+//            xml.append("                <param name=\"Підкатегорія\">").append(product.getSubcategory()).append("</param>\n");
 
             xml.append("            </offer>\n");
         }

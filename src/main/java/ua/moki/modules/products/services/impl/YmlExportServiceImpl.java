@@ -13,6 +13,7 @@ import ua.moki.modules.products.repositories.ProductRepository;
 import ua.moki.modules.products.services.YmlExportService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -67,10 +68,10 @@ public class YmlExportServiceImpl implements YmlExportService {
         for (Product product : products) {
             xml.append("            <offer id=\"").append(product.getId()).append("\" available=\"true\">\n");
 
-           BigDecimal currentPrice = product.getPriceWithDiscount() != null ? product.getPriceWithDiscount() : product.getPrice();
-           xml.append("                <price>").append(currentPrice).append("</price>\n");
-           xml.append("                <price_old>").append(product.getPrice()).append("</price_old>\n");
-           xml.append("                <price_promo>").append(product.getPrice()).append("</price_promo>\n");
+           BigDecimal priceForRozetka = product.getPrice().multiply(new BigDecimal("1.165")).setScale(0, RoundingMode.HALF_UP);
+           xml.append("                <price>").append(priceForRozetka).append("</price>\n");
+           xml.append("                <price_old>").append(priceForRozetka.add(BigDecimal.TEN)).append("</price_old>\n");
+           xml.append("                <price_promo>").append(priceForRozetka.subtract(BigDecimal.TEN)).append("</price_promo>\n");
            xml.append("                <stock_quantity>100</stock_quantity>\n");
            xml.append("                <url>:").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
            xml.append("                <currencyId>UAH</currencyId>\n");

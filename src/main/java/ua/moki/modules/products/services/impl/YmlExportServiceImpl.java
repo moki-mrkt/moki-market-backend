@@ -79,7 +79,7 @@ public class YmlExportServiceImpl implements YmlExportService {
            xml.append("                <categoryId>101</categoryId>\n"); // Відповідає category id вище
 
             for (ProductImage image : product.getImages()) {
-                String imageUrl = storageUrl + image.getImageId();
+                String imageUrl = storageUrl + image.getImageId() + "_large.webp";
                 xml.append("                <picture>").append(imageUrl).append("</picture>\n");
             }
 

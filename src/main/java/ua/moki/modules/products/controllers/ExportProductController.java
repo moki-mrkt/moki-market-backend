@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ua.moki.modules.products.services.YmlExportService;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/export")
 @RequiredArgsConstructor
 public class ExportProductController {
 

@@ -24,4 +24,11 @@ public class ExportProductController {
         return ResponseEntity.ok(ymlExportService.generateYmlForCandies());
     }
 
+    @GetMapping(value = "/kasta/candies", produces = MediaType.APPLICATION_XML_VALUE)
+    @PreAuthorize("permitAll()")
+    @SecurityRequirements()
+    public ResponseEntity<String> kastaCandies() {
+        return ResponseEntity.ok(ymlExportService.generateYmlForCandiesByKasta());
+    }
+
 }

@@ -84,19 +84,19 @@ public class YmlExportServiceImpl implements YmlExportService {
                 xml.append("                <picture>").append(imageUrl).append("</picture>\n");
             }
 
-            xml.append("                <vendor><![CDATA[").append(product.getManufacturerOfTheProduct()).append("]]></vendor>\n");
-            xml.append("                <name><![CDATA[").append(product.getName()).append("]]></name>\n");
-            xml.append("                <description><![CDATA[").append(product.getDescription()).append("]]></description>\n");
+            xml.append("                <vendor>").append(product.getManufacturerOfTheProduct()).append("</vendor>\n");
+            xml.append("                <name>").append(product.getName()).append("</name>\n");
+            xml.append("                <description>").append(product.getDescription()).append("</description>\n");
 
             xml.append("""
-                                        <param name="Гарантия" paramid="20769" valueid="11">
+                                        <param name="Гарантія" paramid="20769" valueid="11">
                                             <value lang="uk">1 місяць</value>
                                             <value lang="ru">1 месяц</value>
                                         </param>
                     """);
 
             xml.append("""
-                                        <param name="Вес в упаковке" paramid="48739" valueid="12">
+                                        <param name="Вага в упаковці, кг" paramid="48739" valueid="12">
                                             <value lang="uk">1.05</value>
                                             <value lang="ru">1.05</value>
                                         </param>
@@ -163,6 +163,82 @@ public class YmlExportServiceImpl implements YmlExportService {
                                             <value lang="uk">1</value>
                                             <value lang="ru">1</value>
                                         </param>
+                    """);
+
+            xml.append("                <param name=\"Підкатегорія\"><![CDATA[").append(product.getSubcategory()).append("]]></param>\n");
+
+            xml.append("            </offer>\n");
+        }
+
+        xml.append("        </offers>\n");
+        xml.append("    </shop>\n");
+        xml.append("</yml_catalog>");
+
+        return xml.toString();
+    }
+
+    @Transactional(readOnly = true)
+    public String generateYmlForCandiesByKasta() {
+        List<Product> products = productRepository
+                .findAllByProductCategory(
+                        ProductCategory.CANDIES,
+                        Pageable.unpaged()
+                ).getContent();
+
+        StringBuilder xml = new StringBuilder();
+
+        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        xml.append("<yml_catalog date=\"")
+                .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .append("\">\n");
+
+        xml.append("    <shop>\n");
+        xml.append("        <name>Moki Market</name>\n");
+        xml.append("        <company>Moki</company>\n");
+        xml.append("        <url>https://moki.com.ua/</url>\n");
+
+        xml.append("        <currencies>\n");
+        xml.append("            <currency id=\"UAH\" rate=\"1\"/>\n");
+        xml.append("            <currency id=\"USD\" rate=\"44.6\"/>\n");
+        xml.append("            <currency id=\"EUR\" rate=\"51.2\"/>\n");
+        xml.append("        </currencies>\n");
+
+        xml.append("        <categories>\n");
+        xml.append("            <category id=\"101\">Цукерки</category>\n");
+        xml.append("        </categories>\n");
+
+        xml.append("        <offers>\n");
+
+        for (Product product : products) {
+            xml.append("            <offer id=\"").append(product.getId()).append("\" available=\"true\">\n");
+
+            BigDecimal priceForRozetka = calculatePrice(product);
+            xml.append("                <price>").append(priceForRozetka).append("</price>\n");
+            xml.append("                <price_old>").append(priceForRozetka.add(BigDecimal.TEN)).append("</price_old>\n");
+            xml.append("                <price_promo>").append(priceForRozetka.subtract(BigDecimal.TEN)).append("</price_promo>\n");
+
+            xml.append("                <article>").append(product.getId() + 100).append("</article>\n");
+            xml.append("                <stock_quantity>100</stock_quantity>\n");
+            xml.append("                <url>:").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
+            xml.append("                <currencyId>UAH</currencyId>\n");
+            xml.append("                <categoryId>101</categoryId>\n");
+
+            for (ProductImage image : product.getImages()) {
+                String imageUrl = storageUrl + image.getImageId() + "_large.webp";
+                xml.append("                <picture>").append(imageUrl).append("</picture>\n");
+            }
+
+            xml.append("                <vendor>").append(product.getManufacturerOfTheProduct()).append("</vendor>\n");
+            xml.append("                <name>").append(product.getName()).append("</name>\n");
+            xml.append("                <description>").append(product.getDescription()).append("</description>\n");
+
+            xml.append("""
+                                        <param name="Колір">-</param>
+                                        <param name="Розмір">-</param>
+                                        <param name="Габарити в упаковці,см">29х19х6</param>
+                                        <param name="Вага в упаковці, кг">1.05</param>
+                                        <param name="Вага, г">1000</param>
+                                        <param name="Країна виробник">Україна</param>
                     """);
 
             xml.append("                <param name=\"Підкатегорія\"><![CDATA[").append(product.getSubcategory()).append("]]></param>\n");

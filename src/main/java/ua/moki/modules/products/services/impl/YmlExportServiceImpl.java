@@ -30,16 +30,15 @@ public class YmlExportServiceImpl implements YmlExportService {
 
     @Transactional(readOnly = true)
     public String generateYmlForCandies() {
-        // Витягуємо всі товари з категорії CANDIES, які є в наявності
+
         List<Product> products = productRepository
                 .findAllByProductCategory(
                         ProductCategory.CANDIES,
-                        Pageable.unpaged() // Якщо Pageable.unpaged() не підтримується, використайте PageRequest.of(0, 10000)
+                        Pageable.unpaged()
                 ).getContent();
 
         StringBuilder xml = new StringBuilder();
 
-        // Заголовок та кореневий тег
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<yml_catalog date=\"")
                 .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
@@ -50,19 +49,16 @@ public class YmlExportServiceImpl implements YmlExportService {
         xml.append("        <company>Moki</company>\n");
         xml.append("        <url>https://moki.com.ua/</url>\n");
 
-        // Валюти
         xml.append("        <currencies>\n");
         xml.append("            <currency id=\"UAH\" rate=\"1\"/>\n");
         xml.append("            <currency id=\"USD\" rate=\"44.6\"/>\n");
         xml.append("            <currency id=\"EUR\" rate=\"51.2\"/>\n");
         xml.append("        </currencies>\n");
 
-        // Категорії (динамічно або статично, тут залишаємо статично для Цукерок)
         xml.append("        <categories>\n");
         xml.append("            <category id=\"101\">Цукерки</category>\n");
         xml.append("        </categories>\n");
 
-        // Товари
         xml.append("        <offers>\n");
 
         for (Product product : products) {
@@ -75,7 +71,7 @@ public class YmlExportServiceImpl implements YmlExportService {
 
            xml.append("                <article>").append(product.getId() + 100).append("</article>\n");
            xml.append("                <stock_quantity>100</stock_quantity>\n");
-           xml.append("                <url>:").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
+           xml.append("                <url>").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
            xml.append("                <currencyId>UAH</currencyId>\n");
            xml.append("                <categoryId>101</categoryId>\n"); // Відповідає category id вище
 
@@ -96,11 +92,11 @@ public class YmlExportServiceImpl implements YmlExportService {
                     """);
 
             xml.append("""
-                                        <param name="Вага в упаковці, кг" paramid="48739" valueid="12">
-                                            <value lang="uk">1.05</value>
-                                            <value lang="ru">1.05</value>
+                                        <param name="Вага в упаковці, %s" paramid="48739" valueid="12">
+                                            <value lang="uk">%s</value>
+                                            <value lang="ru">%s</value>
                                         </param>
-                    """);
+                    """.formatted(product.getInitOfMeasure(), product.getValueOfInitOfMeasure(), product.getValueOfInitOfMeasure()));
 
             xml.append("""
                                         <param name="Срок хранения" paramid="71434" valueid="13">
@@ -109,19 +105,12 @@ public class YmlExportServiceImpl implements YmlExportService {
                                         </param>
                     """);
 
-//            xml.append("""
-//                                        <param name="Состав" paramid="223843" valueid="14">
-//                                            <value lang="uk">Волоський горіх</value>
-//                                            <value lang="ru">Грецкий орех</value>
-//                                        </param>
-//                    """);
-
             xml.append("""
-                                        <param name="Вес" paramid="147016" valueid="15">
-                                            <value lang="uk">1000</value>
-                                            <value lang="ru">1000</value>
+                                        <param name="Вес, %s" paramid="147016" valueid="15">
+                                            <value lang="uk">%s</value>
+                                            <value lang="ru">%s</value>
                                         </param>
-                    """);
+                    """.formatted(product.getInitOfMeasure(), product.getValueOfInitOfMeasure(), product.getValueOfInitOfMeasure()));
 
             xml.append("""
                                         <param name="Вид" paramid="" valueid="16">
@@ -165,7 +154,7 @@ public class YmlExportServiceImpl implements YmlExportService {
                                         </param>
                     """);
 
-            xml.append("                <param name=\"Підкатегорія\"><![CDATA[").append(product.getSubcategory()).append("]]></param>\n");
+            xml.append("                <param name=\"Підкатегорія\">").append(product.getSubcategory()).append("</param>\n");
 
             xml.append("            </offer>\n");
         }
@@ -219,7 +208,7 @@ public class YmlExportServiceImpl implements YmlExportService {
 
             xml.append("                <article>").append(product.getId() + 100).append("</article>\n");
             xml.append("                <stock_quantity>100</stock_quantity>\n");
-            xml.append("                <url>:").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
+            xml.append("                <url>").append("https://moki.com.ua/products/").append(product.getSlug()).append("</url>\n");
             xml.append("                <currencyId>UAH</currencyId>\n");
             xml.append("                <categoryId>101</categoryId>\n");
 
@@ -236,12 +225,9 @@ public class YmlExportServiceImpl implements YmlExportService {
                                         <param name="Колір">-</param>
                                         <param name="Розмір">-</param>
                                         <param name="Габарити в упаковці,см">29х19х6</param>
-                                        <param name="Вага в упаковці, кг">1.05</param>
-                                        <param name="Вага, г">1000</param>
+                                        <param name="Вага, %s">%s</param>
                                         <param name="Країна виробник">Україна</param>
-                    """);
-
-//            xml.append("                <param name=\"Підкатегорія\">").append(product.getSubcategory()).append("</param>\n");
+                    """.formatted(product.getInitOfMeasure(), product.getValueOfInitOfMeasure()));
 
             xml.append("            </offer>\n");
         }

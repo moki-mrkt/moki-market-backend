@@ -193,7 +193,7 @@ public class YmlExportServiceImpl implements YmlExportService {
         xml.append("        </currencies>\n");
 
         xml.append("        <categories>\n");
-        xml.append("            <category id=\"101\">Цукерки</category>\n");
+        xml.append("            <category id=\"101\" rz_id=\"4629506\" >Цукерки у коробці</category>\n");
         xml.append("        </categories>\n");
 
         xml.append("        <offers>\n");

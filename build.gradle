@@ -40,6 +40,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail:4.0.1'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:4.1.0'
     implementation 'org.telegram:telegrambots:6.9.7.1'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.22.1'
 
     implementation("com.github.slugify:slugify:3.0.7")
     implementation 'com.ibm.icu:icu4j:72.1'

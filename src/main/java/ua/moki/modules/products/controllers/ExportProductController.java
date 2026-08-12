@@ -21,7 +21,7 @@ public class ExportProductController {
     @PreAuthorize("permitAll()")
     @SecurityRequirements()
     public ResponseEntity<String> rozetkaCandies() {
-        return ResponseEntity.ok(ymlExportService.generateYmlForCandies());
+        return ResponseEntity.ok(ymlExportService.generateYmlForCandiesByRozetka());
     }
 
     @GetMapping(value = "/kasta/candies", produces = MediaType.APPLICATION_XML_VALUE)
@@ -29,6 +29,13 @@ public class ExportProductController {
     @SecurityRequirements()
     public ResponseEntity<String> kastaCandies() {
         return ResponseEntity.ok(ymlExportService.generateYmlForCandiesByKasta());
+    }
+
+    @GetMapping(value = "/prom/sweets", produces = MediaType.APPLICATION_XML_VALUE)
+    @PreAuthorize("permitAll()")
+    @SecurityRequirements()
+    public ResponseEntity<String> promSweets() {
+        return ResponseEntity.ok(ymlExportService.generateYmlForProm());
     }
 
 }

@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.1'
+    id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -37,8 +37,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    implementation 'org.springframework.boot:spring-boot-starter-mail:4.0.1'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:4.1.0'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.telegram:telegrambots:6.9.7.1'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.22.1'
 

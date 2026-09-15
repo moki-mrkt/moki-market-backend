@@ -8,12 +8,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestTemplate;
+
 
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Random;
@@ -51,6 +53,11 @@ public class AppConfig {
     @Bean
     public SecureRandom random() {
         return new SecureRandom();
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 
 }

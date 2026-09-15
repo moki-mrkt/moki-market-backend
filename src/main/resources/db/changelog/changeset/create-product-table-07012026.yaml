@@ -198,3 +198,50 @@ databaseChangeLog:
             tableName: products
             columns:
               - column: { name: sales_count }
+  - changeSet:
+      id: add-columns_for_ru_content
+      author: KyryloPyvovarov
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: name_ru
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: description_ru
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: characteristics_ru
+                  type: jsonb
+                  defaultValue: "{}"
+                  constraints:
+                    nullable: false
+        - modifyDataType:
+            tableName: products
+            columnName: name
+            newDataType: VARCHAR(255)
+  - changeSet:
+      id: add-column_subcategory_ru
+      author: KyryloPyvovarov
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: subcategory_ru
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+  - changeSet:
+      id: update-characteristics_ru-drop-not-null
+      author: KyryloPyvovarov
+      changes:
+        - dropNotNullConstraint:
+            tableName: products
+            columnName: characteristics_ru
+            columnDataType: jsonb

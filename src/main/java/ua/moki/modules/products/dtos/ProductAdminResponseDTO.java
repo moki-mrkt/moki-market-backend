@@ -11,8 +11,10 @@ import java.util.Map;
 public record ProductAdminResponseDTO(
         Long id,
         String name,
+        String nameRu,
         ProductCategory productCategory,
         String description,
+        String descriptionRu,
         BigDecimal price,
         BigDecimal priceWithDiscount,
         BigDecimal purchasePrice,
@@ -27,6 +29,7 @@ public record ProductAdminResponseDTO(
         Long salesCount,
         OffsetDateTime creationTime,
         List<ProductImageResponseDTO> images,
-        Map<String, String> characteristics
+        Map<String, String> characteristics,
+        Map<String, String> characteristicsRu
 ) {
 }

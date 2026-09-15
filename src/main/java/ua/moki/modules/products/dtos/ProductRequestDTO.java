@@ -15,10 +15,18 @@ public record ProductRequestDTO(
                 message = "name of product must be greater than 2 and less than 64"
         )
         String name,
+        @NotBlank(message = "name_ru of product should not be empty")
+        @Size(min = 2, max = 64,
+                message = "name_ru of product must be greater than 2 and less than 64"
+        )
+        String nameRu,
         ProductCategory productCategory,
         @Size(min = 2, max = 5000,
                 message = "description of product must be greater than 2 and less than 5000")
         String description,
+        @Size(min = 2, max = 5000,
+                message = "description_ru of product must be greater than 2 and less than 5000")
+        String descriptionRu,
         @Min(0)
         @Max(100000)
         BigDecimal price,
@@ -35,6 +43,8 @@ public record ProductRequestDTO(
         String manufacturerOfTheProduct,
         @NotBlank(message = "subcategory of product should not be empty")
         String subcategory,
+        @NotBlank(message = "subcategoryRu of product should not be empty")
+        String subcategoryRu,
         @NotBlank(message = "Init of measure should not be empty")
         @Pattern(regexp = "(г|кг|мл|л|см|м|шт|-)")
         String initOfMeasure,
@@ -47,6 +57,8 @@ public record ProductRequestDTO(
                 message = "Can't upload more than 4 files")
         List<ProductImageDTO> images,
         @Nullable
-        Map<String, String> characteristics
+        Map<String, String> characteristics,
+        @Nullable
+        Map<String, String> characteristicsRu
 ) {
 }

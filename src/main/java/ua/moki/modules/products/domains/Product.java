@@ -34,8 +34,10 @@ public class Product {
     @Version
     private Long version;
 
-    @Column(nullable = false, length = 64)
+    @Column(nullable = false, length = 128)
     String name;
+    @Column(name = "name_ru", nullable = false, length = 128)
+    String nameRu;
     @Column(name = "slug", unique = true, nullable = false)
     String slug;
     @Enumerated(EnumType.STRING)
@@ -43,6 +45,8 @@ public class Product {
     ProductCategory productCategory;
     @Column(nullable = false)
     String description;
+    @Column(name = "description_ru", nullable = false)
+    String descriptionRu;
     @Column(precision = 19, scale = 2, nullable = false)
     BigDecimal price;
     @Column(name = "price_with_discount", precision = 19, scale = 2)
@@ -62,6 +66,8 @@ public class Product {
     String manufacturerOfTheProduct;
     @Column(nullable = false)
     String subcategory;
+    @Column(name = "subcategory_ru", nullable = false)
+    String subcategoryRu;
     @Column(name = "sales_count")
     Long salesCount = 0L;
     @Column(nullable = false)
@@ -79,6 +85,10 @@ public class Product {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     Map<String, String> characteristics = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "characteristics_ru", columnDefinition = "jsonb")
+    Map<String, String> characteristicsRu = new HashMap<>();
 
     @Override
     public boolean equals(Object o) {

@@ -50,6 +50,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/generator/**").permitAll()
                         .requestMatchers("/photo/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/password-reset/verify").permitAll()

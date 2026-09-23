@@ -8,7 +8,8 @@ public record CartItemDTO(
         @NotNull(message = "Product ID is required")
         Long productId,
         @Min(value = 1, message = "Quantity must be at least 1")
-        @Max(value = 99, message = "Too many items") // Захист від "дурня" (DDOS або помилки)
-        int quantity
+        @Max(value = 99, message = "Too many items")
+        int quantity,
+        Integer weight
 ) {
 }

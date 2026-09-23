@@ -41,4 +41,7 @@ public class OrderItem {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal finalPricePerUnit;
+
+    @Column(name = "weight")
+    private Integer weight;
 }

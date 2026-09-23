@@ -16,6 +16,7 @@ import ua.moki.modules.users.repositories.UserRepository;
 import ua.moki.util.exceptions.EntityNotFoundException;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,18 +31,19 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponseDTO addToCart(UUID userId, Long productId, int quantity) {
+    public CartResponseDTO addToCart(UUID userId, Long productId, int quantity, Integer weight) {
 
         Cart cart = cartRepository.findCartByUser_PublicId(userId)
                 .orElseGet(() -> createCartForUser(userId));
 
         Optional<CartItem> existingItem = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
+                .filter(item -> item.getProduct().getId().equals(productId) &&
+                        Objects.equals(item.getWeight(), weight))
                 .findFirst();
 
         existingItem.ifPresentOrElse(
                 item -> item.setQuantity(item.getQuantity() + quantity),
-                () -> createAndAddNewItem(cart, productId, quantity)
+                () -> createAndAddNewItem(cart, productId, quantity, weight)
         );
 
         cartRepository.save(cart);
@@ -49,14 +51,14 @@ public class CartServiceImpl implements CartService {
         return cartMapper.toDto(cart);
     }
 
-    private void createAndAddNewItem(Cart cart, Long productId, int quantity) {
+    private void createAndAddNewItem(Cart cart, Long productId, int quantity, Integer weight) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
 
         CartItem newItem = new CartItem();
         newItem.setProduct(product);
         newItem.setQuantity(quantity);
-
+        newItem.setWeight(weight);
         cart.addItem(newItem);
     }
 

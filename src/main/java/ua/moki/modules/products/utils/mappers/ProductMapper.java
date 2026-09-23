@@ -7,6 +7,7 @@ import org.mapstruct.MappingTarget;
 import org.springframework.context.i18n.LocaleContextHolder;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.domains.ProductImage;
+import ua.moki.modules.products.domains.ProductWeightOption;
 import ua.moki.modules.products.dtos.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public interface ProductMapper {
     @Mapping(target = "rating", ignore = true)
     @Mapping(target = "salesCount", ignore = true)
     @Mapping(target = "images", ignore = true)
+    @Mapping(target = "weightOptions", ignore = true)
     Product toEntity(ProductRequestDTO productRequestDTO);
 
     @Mapping(target = "name", expression = "java(getLocalizedName(product))")
@@ -27,14 +29,24 @@ public interface ProductMapper {
     @Mapping(target = "characteristics", expression = "java(getLocalizedCharacteristics(product))")
     @Mapping(target = "subcategory", expression = "java(getLocalizedSubcategory(product))")
     @Mapping(target = "isFavorite", constant = "false")
+    @Mapping(target = "siblingVariants", ignore = true)
     ProductResponseDTO toResponseDTO(Product product);
 
     @Mapping(target = "name", expression = "java(getLocalizedName(product))")
     @Mapping(target = "description", expression = "java(getLocalizedDescription(product))")
     @Mapping(target = "characteristics", expression = "java(getLocalizedCharacteristics(product))")
     @Mapping(target = "subcategory", expression = "java(getLocalizedSubcategory(product))")
-    @Mapping(target = "isFavorite", constant = "false")
+    @Mapping(target = "isFavorite", source = "isFavorite")
+    @Mapping(target = "siblingVariants", ignore = true)
     ProductResponseDTO toResponseDTO(Product product, boolean isFavorite);
+
+    @Mapping(target = "name", expression = "java(getLocalizedName(product))")
+    @Mapping(target = "description", expression = "java(getLocalizedDescription(product))")
+    @Mapping(target = "characteristics", expression = "java(getLocalizedCharacteristics(product))")
+    @Mapping(target = "subcategory", expression = "java(getLocalizedSubcategory(product))")
+    @Mapping(target = "isFavorite", source = "isFavorite")
+    @Mapping(target = "siblingVariants", source = "variants")
+    ProductResponseDTO toResponseDTOWithVariants(Product product, boolean isFavorite, List<ProductVariantDTO> variants);
 
     ProductAdminResponseDTO toAdminResponseDTO(Product product);
 
@@ -45,6 +57,7 @@ public interface ProductMapper {
     @Mapping(target = "salesCount", ignore = true)
     @Mapping(target = "creationTime", ignore = true)
     @Mapping(target = "images", ignore = true)
+    @Mapping(target = "weightOptions", ignore = true)
     void updateEntityFromDto(ProductRequestDTO dto, @MappingTarget Product entity);
 
     @Mapping(target = "id", ignore = true)
@@ -55,15 +68,29 @@ public interface ProductMapper {
     @Mapping(target = "isMain", source = "main")
     ProductImageDTO toImageDTO(ProductImage image);
 
+    @Mapping(target = "product", ignore = true)
+    ProductWeightOption toWeightOptionEntity(ProductWeightOptionDTO dto);
+
+    ProductWeightOptionDTO toWeightOptionDTO(ProductWeightOption entity);
+
     @AfterMapping
-    default void updateImages(ProductRequestDTO dto, @MappingTarget Product entity) {
-        if (dto.images() == null) return;
+    default void updateImagesAndWeights(ProductRequestDTO dto, @MappingTarget Product entity) {
+        // 1. Оновлення зображень
+        if (dto.images() != null) {
+            List<ProductImage> incomingImages = dto.images().stream()
+                    .map(this::toImageEntity)
+                    .toList();
+            entity.syncImages(incomingImages);
+        }
 
-        List<ProductImage> incomingImages = dto.images().stream()
-                .map(this::toImageEntity)
-                .toList();
-
-        entity.syncImages(incomingImages);
+        // 2. Оновлення вагових опцій (Тільки для Типу 2)
+        if (dto.weightOptions() != null) {
+            List<ProductWeightOption> incomingWeights = dto.weightOptions().stream()
+                    .map(this::toWeightOptionEntity)
+                    .toList();
+            // Потрібно створити метод syncWeightOptions у сутності Product за аналогією з syncImages
+            entity.syncWeightOptions(incomingWeights);
+        }
     }
 
     default String getLocalizedName(Product product) {

@@ -256,26 +256,38 @@ public class ProductServiceImpl implements ProductService {
     private Function<Product, ProductResponseDTO> getProductMapperFunction() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        return product -> {
+            boolean isFav = false;
 
-        if (authentication == null ||
-                !authentication.isAuthenticated() ||
-                authentication instanceof AnonymousAuthenticationToken) {
-            return productMapper::toResponseDTO;
-        }
+            if (authentication != null &&
+                    authentication.isAuthenticated() &&
+                    !(authentication instanceof AnonymousAuthenticationToken)) {
+                try {
+                    UUID userId = UUID.fromString(authentication.getName());
+                    Set<Long> favoriteIds = favoriteProductRepository.findProductIdsByUserPublicId(userId);
+                    isFav = favoriteIds.contains(product.getId());
+                } catch (IllegalArgumentException e) {
+                    log.error("User ID is not a valid UUID: {}", authentication.getName());
+                }
+            }
 
-        try {
-            UUID userId = UUID.fromString(authentication.getName());
+            List<ProductVariantDTO> variants = null;
+            if (product.getProductType() == ua.moki.modules.products.enums.ProductType.VARIANT
+                    && product.getGroupId() != null
+                    && !product.getGroupId().isBlank()) {
 
-            Set<Long> favoriteIds = favoriteProductRepository.findProductIdsByUserPublicId(userId);
+                variants = productRepository.findByGroupId(product.getGroupId()).stream()
+                        .map(sibling -> new ProductVariantDTO(
+                                sibling.getId(),
+                                sibling.getSlug(),
+                                sibling.getVariantName(),
+                                sibling.getVariantValue(),
+                                sibling.getId().equals(product.getId())
+                        ))
+                        .toList();
+            }
 
-            return product -> {
-                boolean isFav = favoriteIds.contains(product.getId());
-                return productMapper.toResponseDTO(product, isFav);
-            };
-
-        } catch (IllegalArgumentException e) {
-            log.error("User ID is not a valid UUID: {}", authentication.getName());
-            return productMapper::toResponseDTO;
-        }
+            return productMapper.toResponseDTOWithVariants(product, isFav, variants);
+        };
     }
 }

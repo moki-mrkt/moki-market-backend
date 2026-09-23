@@ -26,9 +26,10 @@ public class CartController {
     @PostMapping("/items")
     public ResponseEntity<CartResponseDTO> addToCart(Principal principal,
                                                      @RequestParam Long productId,
-                                                     @RequestParam @Min(1) int quantity) {
+                                                     @RequestParam @Min(1) int quantity,
+                                                     @RequestParam(required = false) Integer weight) {
         UUID userId = UUID.fromString(principal.getName());
-        CartResponseDTO cartResponseDTO = cartService.addToCart(userId, productId, quantity);
+        CartResponseDTO cartResponseDTO = cartService.addToCart(userId, productId, quantity, weight);
         return ResponseEntity.ok(cartResponseDTO);
     }
 

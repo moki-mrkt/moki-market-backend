@@ -37,9 +37,10 @@ public interface OrderMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "quantity", source = "dto.quantity")
+    @Mapping(target = "weight", source = "dto.weight")
     @Mapping(target = "product", source = "product")
     @Mapping(target = "order", source = "order")
-    @Mapping(target = "basePriceAtPurchase", source = "product.price")
+    @Mapping(target = "basePriceAtPurchase", ignore = true)
     @Mapping(target = "discountPercentageAtPurchase", source = "product.discount")
     @Mapping(target = "discountAmountPerUnit", ignore = true)
     @Mapping(target = "finalPricePerUnit", ignore = true)
@@ -71,17 +72,36 @@ public interface OrderMapper {
 
     @AfterMapping
     default void calculatePrices(@MappingTarget OrderItem item, Product product) {
+        BigDecimal basePrice = product.getPrice();
+
+        if (product.getProductType() == ua.moki.modules.products.enums.ProductType.WEIGHT_BASED && item.getWeight() != null) {
+
+            java.util.Optional<ua.moki.modules.products.domains.ProductWeightOption> fixedOption =
+                    product.getWeightOptions().stream()
+                            .filter(opt -> opt.getWeightValue().equals(item.getWeight()))
+                            .findFirst();
+
+            if (fixedOption.isPresent()) {
+                basePrice = fixedOption.get().getPrice();
+            } else {
+                BigDecimal weightMultiplier = BigDecimal.valueOf(item.getWeight())
+                        .divide(BigDecimal.valueOf(1000), 4, RoundingMode.HALF_UP);
+                basePrice = product.getPrice().multiply(weightMultiplier).setScale(2, RoundingMode.HALF_UP);
+            }
+        }
+
+        item.setBasePriceAtPurchase(basePrice);
 
         int discountPercent = (product.getDiscount() != null) ? product.getDiscount() : 0;
-
         BigDecimal discountAmount = BigDecimal.ZERO;
+
         if (discountPercent > 0) {
-            discountAmount = product.getPrice()
+            discountAmount = basePrice
                     .multiply(BigDecimal.valueOf(discountPercent))
                     .divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP);
         }
 
         item.setDiscountAmountPerUnit(discountAmount);
-        item.setFinalPricePerUnit(product.getPrice().subtract(discountAmount));
+        item.setFinalPricePerUnit(basePrice.subtract(discountAmount));
     }
 }

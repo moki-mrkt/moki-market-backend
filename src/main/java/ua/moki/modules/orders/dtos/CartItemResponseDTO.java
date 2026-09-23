@@ -9,5 +9,6 @@ public record CartItemResponseDTO(
         BigDecimal currentPrice,
         BigDecimal productPrice,
         int quantity,
-        BigDecimal totalPrice
+        BigDecimal totalPrice,
+        Integer weight
 ) {}

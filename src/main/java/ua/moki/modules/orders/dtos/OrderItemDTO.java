@@ -8,6 +8,7 @@ public record OrderItemDTO (
         BigDecimal finalPricePerUnit,
         BigDecimal basePriceAtPurchase,
         int quantity,
-        BigDecimal totalAmount
+        BigDecimal totalAmount,
+        Integer weight
 ) {
 }

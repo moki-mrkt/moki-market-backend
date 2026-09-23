@@ -29,6 +29,8 @@ public class CartItem {
     private Product product;
 
     private Integer quantity;
+    @Column(name = "weight")
+    private Integer weight;
 
     @CreatedDate
     @Column(name = "create_at")

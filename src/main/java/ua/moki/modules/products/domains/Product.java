@@ -11,6 +11,7 @@ import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
+import ua.moki.modules.products.enums.ProductType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -74,6 +75,21 @@ public class Product {
     String initOfMeasure;
     @Column(nullable = false)
     Integer valueOfInitOfMeasure;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "product_type")
+    ProductType productType = ProductType.SIMPLE;
+    @Column(name = "min_custom_weight")
+    Integer minCustomWeight;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<ProductWeightOption> weightOptions = new ArrayList<>();
+    @Column(name = "group_id")
+    private String groupId;
+    @Column(name = "variant_name")
+    private String variantName;
+    @Column(name = "variant_value")
+    private String variantValue;
+
     @CreatedDate
     @Column(name = "creation_time", nullable = false, updatable = false)
     OffsetDateTime creationTime;
@@ -133,6 +149,19 @@ public class Product {
                         .findFirst()
                         .ifPresent(existing -> {
                         });
+            }
+        }
+    }
+
+    public void syncWeightOptions(List<ProductWeightOption> incomingOptions) {
+        if (this.weightOptions == null) {
+            this.weightOptions = new ArrayList<>();
+        }
+        this.weightOptions.clear();
+        if (incomingOptions != null) {
+            for (ProductWeightOption option : incomingOptions) {
+                option.setProduct(this); // Встановлюємо двосторонній зв'язок
+                this.weightOptions.add(option);
             }
         }
     }

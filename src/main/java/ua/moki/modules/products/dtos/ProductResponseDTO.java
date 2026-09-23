@@ -25,6 +25,13 @@ public record ProductResponseDTO(
         String initOfMeasure,
         Integer valueOfInitOfMeasure,
         boolean isFavorite,
+        String productType,
+        Integer minCustomWeight,
+        List<ProductWeightOptionDTO> weightOptions,
+        List<ProductVariantDTO> siblingVariants,
+        String groupId,
+        String variantName,
+        String variantValue,
         List<ProductImageResponseDTO> images,
         Map<String, String> characteristics
 ) {

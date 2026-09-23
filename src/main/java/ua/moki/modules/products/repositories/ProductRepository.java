@@ -11,6 +11,7 @@ import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -29,6 +30,8 @@ public interface ProductRepository extends
     Page<Product> findAllWithDiscount(Pageable pageable);
 
     Page<Product> findAll(Specification specification, Pageable pageable);
+
+    List<Product> findByGroupId(String groupId);
 
     boolean existsBySlug(String slug);
 

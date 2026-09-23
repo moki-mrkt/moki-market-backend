@@ -4,6 +4,7 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.*;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
+import ua.moki.modules.products.enums.ProductType;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -59,6 +60,22 @@ public record ProductRequestDTO(
         @Nullable
         Map<String, String> characteristics,
         @Nullable
-        Map<String, String> characteristicsRu
+        Map<String, String> characteristicsRu,
+        @NotNull(message = "Product type cannot be null")
+        ProductType productType,
+        @Nullable
+        @Min(0)
+        Integer minCustomWeight,
+        @Nullable
+        List<ProductWeightOptionDTO> weightOptions,
+        @Nullable
+        @Size(max = 255)
+        String groupId,
+        @Nullable
+        @Size(max = 100)
+        String variantName,
+        @Nullable
+        @Size(max = 100)
+        String variantValue
 ) {
 }

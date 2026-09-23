@@ -245,3 +245,80 @@ databaseChangeLog:
             tableName: products
             columnName: characteristics_ru
             columnDataType: jsonb
+  - changeSet:
+      id: add-product-types-and-variants
+      author: KyryloPyvovarov
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: product_type
+                  type: varchar(50)
+                  defaultValue: SIMPLE
+              - column:
+                  name: min_custom_weight
+                  type: integer
+              - column:
+                  name: weight_price_per_kg
+                  type: numeric(10, 2)
+              - column:
+                  name: group_id
+                  type: varchar(255)
+              - column:
+                  name: variant_name
+                  type: varchar(100)
+              - column:
+                  name: variant_value
+                  type: varchar(100)
+        - createTable:
+            tableName: product_weight_options
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_weight_product
+                    references: products(id)
+                    deleteCascade: true
+              - column:
+                  name: weight_value
+                  type: integer # в граммах
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: numeric(10, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_default
+                  type: boolean
+                  defaultValueBoolean: false
+        - addColumn:
+            tableName: cart_items
+            columns:
+              - column:
+                  name: weight
+                  type: integer
+        - addColumn:
+            tableName: order_items
+            columns:
+              - column:
+                  name: weight
+                  type: integer
+  - changeSet:
+      id: drop-weight-price-column
+      author: KyryloPyvovarov
+      changes:
+        - dropColumn:
+            tableName: products
+            columnName: weight_price_per_kg

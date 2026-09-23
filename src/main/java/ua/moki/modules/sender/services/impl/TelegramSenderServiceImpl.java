@@ -105,11 +105,21 @@ public class TelegramSenderServiceImpl extends DefaultAbsSender implements Teleg
         }
 
         return items.stream()
+                .map(item -> {
+                    StringBuilder sb = new StringBuilder("▫️ ").append(item.itemName());
 
-                .map(item -> String.format("▫️ %s (x%d) — %s грн",
-                        item.itemName(),
-                        item.quantity(),
-                        item.finalPricePerUnit()))
+                    if (item.weight() != null) {
+                        String weightStr = item.weight() >= 1000
+                                ? (item.weight() / 1000.0) + " кг"
+                                : item.weight() + " г";
+                        weightStr = weightStr.replace(".0 кг", " кг");
+                        sb.append(" (").append(weightStr).append(")");
+                    }
+                    sb.append(" (x").append(item.quantity()).append(") — ")
+                            .append(item.finalPricePerUnit()).append(" грн");
+
+                    return sb.toString();
+                })
                 .collect(Collectors.joining("\n"));
     }
 

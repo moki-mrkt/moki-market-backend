@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface CartService {
 
-    CartResponseDTO addToCart(UUID userId, Long productId, int quantity);
+    CartResponseDTO addToCart(UUID userId, Long productId, int quantity, Integer weight);
     CartResponseDTO updateItemQuantity(UUID userId, Long productId, int quantity);
     CartResponseDTO deleteItemFromCart(UUID userId, Long productId);
     void clearCart(User user);

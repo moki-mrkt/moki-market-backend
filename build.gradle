@@ -49,6 +49,7 @@ dependencies {
     implementation("com.twelvemonkeys.imageio:imageio-webp:3.13.1")
 
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    implementation("org.commonmark:commonmark:0.30.0")
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

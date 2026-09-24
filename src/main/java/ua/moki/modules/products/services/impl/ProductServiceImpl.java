@@ -219,8 +219,10 @@ public class ProductServiceImpl implements ProductService {
                 cb.notEqual(root.get("availability"), ProductAvailability.ARCHIVED)
         );
 
-        Sort prioritySort = Sort.by(Sort.Order.asc("availability"))
-                .and(pageable.getSort());
+        Sort prioritySort = Sort.by(
+                Sort.Order.asc("availability"),
+                Sort.Order.asc("groupId").nullsLast()
+        ).and(pageable.getSort());
 
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),

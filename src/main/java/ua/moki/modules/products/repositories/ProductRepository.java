@@ -3,6 +3,7 @@ package ua.moki.modules.products.repositories;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -25,6 +26,7 @@ public interface ProductRepository extends
     Page<Product> findAllByAvailability(Pageable pageable, ProductAvailability availability);
     Page<Product> findAllByProductCategoryAndAvailability(ProductCategory productCategory, ProductAvailability availability, Pageable pageable);
     Page<Product> findAllByProductCategory(ProductCategory productCategory, Pageable pageable);
+    Page<Product> findAllByProductCategoryAndSubcategory(ProductCategory productCategory, String subcategory, Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.discount > 0 AND p.availability = 'IN_STOCK' ")
     Page<Product> findAllWithDiscount(Pageable pageable);

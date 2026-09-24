@@ -1,9 +1,8 @@
-package ua.moki.modules.products.dtos.yml_catalog.param;
+package ua.moki.modules.products.dtos.yml_catalog;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import ua.moki.modules.products.dtos.yml_catalog.ParamValue;
 
 import java.util.List;
 

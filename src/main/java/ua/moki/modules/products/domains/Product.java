@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
@@ -51,11 +52,11 @@ public class Product {
     @Column(precision = 19, scale = 2, nullable = false)
     BigDecimal price;
     @Column(name = "price_with_discount", precision = 19, scale = 2)
-    private BigDecimal priceWithDiscount;
+    BigDecimal priceWithDiscount;
     @Column(precision = 19, scale = 2, nullable = false)
     BigDecimal rating;
     @Column(name = "reviews_count", nullable = false)
-    private Long reviewsCount = 0L;
+    Long reviewsCount = 0L;
     @Enumerated(EnumType.STRING)
     @Column( nullable = false, length = 32)
     ProductAvailability availability;
@@ -81,6 +82,7 @@ public class Product {
     ProductType productType = ProductType.SIMPLE;
     @Column(name = "min_custom_weight")
     Integer minCustomWeight;
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ProductWeightOption> weightOptions = new ArrayList<>();
     @Column(name = "group_id")
@@ -88,15 +90,16 @@ public class Product {
     @Column(name = "variant_name")
     private String variantName;
     @Column(name = "variant_value")
-    private String variantValue;
+    String variantValue;
 
     @CreatedDate
     @Column(name = "creation_time", nullable = false, updatable = false)
     OffsetDateTime creationTime;
 
     @Setter(AccessLevel.NONE)
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductImage> images = new ArrayList<>();
+    List<ProductImage> images = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

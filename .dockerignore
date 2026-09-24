@@ -1,0 +1,11 @@
+cat << 'EOF' > .dockerignore
+build/
+.gradle/
+.idea/
+*.iml
+.git
+.gitignore
+*.log
+moki-market-backend/build/
+moki-market-react/
+EOF

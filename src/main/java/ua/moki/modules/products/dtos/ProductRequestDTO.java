@@ -12,12 +12,12 @@ import java.util.Map;
 
 public record ProductRequestDTO(
         @NotBlank(message = "name of product should not be empty")
-        @Size(min = 2, max = 64,
+        @Size(min = 2, max = 255,
                 message = "name of product must be greater than 2 and less than 64"
         )
         String name,
         @NotBlank(message = "name_ru of product should not be empty")
-        @Size(min = 2, max = 64,
+        @Size(min = 2, max = 255,
                 message = "name_ru of product must be greater than 2 and less than 64"
         )
         String nameRu,

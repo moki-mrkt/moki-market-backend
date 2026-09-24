@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ua.moki.modules.products.enums.ProductCategory;
-import ua.moki.modules.products.services.YmlExportService;
 import ua.moki.modules.products.services.exports.KastaExport;
 import ua.moki.modules.products.services.exports.PromExport;
 import ua.moki.modules.products.services.exports.RozetkaExport;

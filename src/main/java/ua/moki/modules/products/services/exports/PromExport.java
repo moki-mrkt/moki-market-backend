@@ -1,12 +1,11 @@
 package ua.moki.modules.products.services.exports;
 
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ua.moki.modules.products.domains.Product;
-import ua.moki.modules.products.dtos.yml_catalog.*;
-import ua.moki.modules.products.enums.ProductAvailability;
+import ua.moki.modules.products.dtos.yml_catalog.Offer;
+import ua.moki.modules.products.dtos.yml_catalog.Param;
+import ua.moki.modules.products.dtos.yml_catalog.SimpleParam;
 import ua.moki.modules.products.enums.ProductCategory;
 import ua.moki.modules.products.repositories.ProductRepository;
 

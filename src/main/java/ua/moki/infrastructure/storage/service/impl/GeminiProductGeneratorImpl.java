@@ -26,7 +26,6 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
     public String generateDescription(String productName, String attributes) {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" + apiKey;
 
-        // Формируем промпт для генерации
         String prompt = String.format(
                 "Ти досвідчений копірайтер інтернет-магазину. " +
                         "Напиши привабливий SEO-оптимізований опис для товару '%s'. " +
@@ -36,7 +35,6 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
                 productName, attributes
         );
 
-        // Збираємо тіло запиту (JSON)
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                         Map.of("parts", List.of(
@@ -50,20 +48,40 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-        // Відправляємо запит
-        try {
-            Map<String, Object> response = restTemplate.postForObject(url, request, Map.class);
-            return extractTextFromResponse(response);
-        } catch (Exception e) {
-            // Логування помилки
-            log.error(e.getMessage());
-            return "";
+        int maxRetries = 3;
+        int attempt = 0;
+
+        while (attempt < maxRetries) {
+            try {
+                Map<String, Object> response = restTemplate.postForObject(url, request, Map.class);
+                return extractTextFromResponse(response);
+            } catch (org.springframework.web.client.HttpServerErrorException e) {
+                // Якщо помилка 503 (сервер перевантажений), робимо паузу і пробуємо знову
+                if (e.getStatusCode().value() == 503) {
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        log.error("Gemini API перевантажений після {} спроб", maxRetries);
+                        return "";
+                    }
+                    try {
+                        Thread.sleep(2000); // Чекаємо 2 секунди перед наступною спробою
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                } else {
+                    log.error("Помилка API: {}", e.getMessage());
+                    return "";
+                }
+            } catch (Exception e) {
+                log.error("Неочікувана помилка: {}", e.getMessage());
+                return "";
+            }
         }
+        return "";
     }
 
     @SuppressWarnings("unchecked")
     private String extractTextFromResponse(Map<String, Object> response) {
-        // Парсинг JSON-відповіді Gemini
         List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
         if (candidates != null && !candidates.isEmpty()) {
             Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");

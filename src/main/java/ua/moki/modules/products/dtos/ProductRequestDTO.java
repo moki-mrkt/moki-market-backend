@@ -66,6 +66,7 @@ public record ProductRequestDTO(
         @Nullable
         @Min(0)
         Integer minCustomWeight,
+        Boolean allowCustomWeight,
         @Nullable
         List<ProductWeightOptionDTO> weightOptions,
         @Nullable

@@ -30,6 +30,7 @@ public record ProductAdminResponseDTO(
         Long salesCount,
         String productType,
         Integer minCustomWeight,
+        Boolean allowCustomWeight,
         List<ProductWeightOptionDTO> weightOptions,
         List<ProductVariantDTO> siblingVariants,
         String groupId,

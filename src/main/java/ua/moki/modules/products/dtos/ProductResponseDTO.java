@@ -27,6 +27,7 @@ public record ProductResponseDTO(
         boolean isFavorite,
         String productType,
         Integer minCustomWeight,
+        Boolean allowCustomWeight,
         List<ProductWeightOptionDTO> weightOptions,
         List<ProductVariantDTO> siblingVariants,
         String groupId,

@@ -333,3 +333,14 @@ databaseChangeLog:
                   name: is_exported
                   type: boolean
                   defaultValueBoolean: true
+  - changeSet:
+      id: add-allow_custom_weight
+      author: KyryloPyvovarov
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: allow_custom_weight
+                  type: boolean
+                  defaultValueBoolean: true

@@ -82,6 +82,8 @@ public class Product {
     ProductType productType = ProductType.SIMPLE;
     @Column(name = "min_custom_weight")
     Integer minCustomWeight;
+    @Column(name = "allow_custom_weight", nullable = false)
+    private Boolean allowCustomWeight = false;
     @BatchSize(size = 50)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ProductWeightOption> weightOptions = new ArrayList<>();

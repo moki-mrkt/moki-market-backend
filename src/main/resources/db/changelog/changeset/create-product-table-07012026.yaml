@@ -322,3 +322,14 @@ databaseChangeLog:
         - dropColumn:
             tableName: products
             columnName: weight_price_per_kg
+  - changeSet:
+      id: add-is-exported-to-weight-options
+      author: KyryloPyvovarov
+      changes:
+        - addColumn:
+            tableName: product_weight_options
+            columns:
+              - column:
+                  name: is_exported
+                  type: boolean
+                  defaultValueBoolean: true

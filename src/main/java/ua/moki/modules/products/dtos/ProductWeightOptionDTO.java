@@ -6,6 +6,7 @@ public record ProductWeightOptionDTO(
         Long id,
         Integer weightValue,
         BigDecimal price,
-        Boolean isDefault
+        Boolean isDefault,
+        Boolean isExported
 ) {
 }

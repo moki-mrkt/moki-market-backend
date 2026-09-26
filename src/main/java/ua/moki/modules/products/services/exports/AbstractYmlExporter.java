@@ -133,27 +133,29 @@ public abstract class AbstractYmlExporter {
                     && product.getWeightOptions() != null
                     && !product.getWeightOptions().isEmpty()) {
 
-                return product.getWeightOptions().stream().map(opt -> {
-                    String uniqueId = product.getId() + "-" + opt.getWeightValue();
-                    String weightName = product.getName() + " " + opt.getWeightValue() + "г";
+                return product.getWeightOptions().stream()
+                        .filter(opt -> Boolean.TRUE.equals(opt.getIsExported()))
+                        .map(opt -> {
+                            String uniqueId = product.getId() + "-" + opt.getWeightValue();
+                            String weightName = product.getName() + " " + opt.getWeightValue() + "г";
 
-                    BigDecimal optionPurchasePrice = null;
-                    if (product.getPurchasePrice() != null) {
-                        BigDecimal ratio = BigDecimal.valueOf(opt.getWeightValue())
-                                .divide(new BigDecimal("1000"), 4, RoundingMode.HALF_UP);
-                        optionPurchasePrice = product.getPurchasePrice().multiply(ratio);
-                    }
+                            BigDecimal optionPurchasePrice = null;
+                            if (product.getPurchasePrice() != null) {
+                                BigDecimal ratio = BigDecimal.valueOf(opt.getWeightValue())
+                                        .divide(new BigDecimal("1000"), 4, RoundingMode.HALF_UP);
+                                optionPurchasePrice = product.getPurchasePrice().multiply(ratio);
+                            }
 
-                    return mapper.map(
-                            product,
-                            uniqueId,
-                            weightName,
-                            opt.getPrice(),
-                            optionPurchasePrice,
-                            BigDecimal.valueOf(opt.getWeightValue()),
-                            "г"
-                    );
-                });
+                            return mapper.map(
+                                    product,
+                                    uniqueId,
+                                    weightName,
+                                    opt.getPrice(),
+                                    optionPurchasePrice,
+                                    BigDecimal.valueOf(opt.getWeightValue()),
+                                    "г"
+                            );
+                        });
             }
 
             return Stream.of(mapper.map(

@@ -23,11 +23,15 @@ public class ProductWeightOption {
     private Product product;
 
     @Column(name = "weight_value", nullable = false)
-    private Integer weightValue; // Вага в грамах
+    private Integer weightValue;
 
     @Column(nullable = false)
-    private BigDecimal price; // Фіксована ціна за цю упаковку
+    private BigDecimal price;
 
     @Column(name = "is_default")
     private Boolean isDefault = false;
+
+    @Column(name = "is_exported", nullable = false)
+    @Builder.Default
+    private Boolean isExported = true;
 }

@@ -65,7 +65,7 @@ public class KastaExport extends AbstractYmlExporter {
                 "https://moki.com.ua/products/" + product.getSlug(),
                 "UAH",
                 "101",
-                getPictureUrls(product, null),
+                getPictureUrls(product, null, "_logo.png"),
                 product.getManufacturerOfTheProduct(),
                 offerName,
                 null,

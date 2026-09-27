@@ -23,6 +23,8 @@ public interface ProductRepository extends
 
     Optional<Product> findBySlug(String slug);
     Page<Product> findAll(Pageable pageable);
+    @Query("SELECT img.imageId FROM Product p JOIN p.images img")
+    List<String> findAllProductImageIds();
     Page<Product> findAllByAvailability(Pageable pageable, ProductAvailability availability);
     Page<Product> findAllByProductCategoryAndAvailability(ProductCategory productCategory, ProductAvailability availability, Pageable pageable);
     Page<Product> findAllByProductCategory(ProductCategory productCategory, Pageable pageable);

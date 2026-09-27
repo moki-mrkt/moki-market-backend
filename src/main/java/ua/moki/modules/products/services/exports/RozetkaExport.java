@@ -90,7 +90,7 @@ public class RozetkaExport extends AbstractYmlExporter {
                 "https://moki.com.ua/products/" + product.getSlug(),
                 "UAH",
                 "101",
-                getPictureUrls(product, null),
+                getPictureUrls(product, null, "_large.webp"),
                 product.getManufacturerOfTheProduct(),
                 offerNameRu,
                 offerName,

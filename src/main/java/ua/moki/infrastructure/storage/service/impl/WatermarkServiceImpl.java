@@ -3,6 +3,7 @@ package ua.moki.infrastructure.storage.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import ua.moki.infrastructure.storage.service.WatermarkService;
 import ua.moki.modules.sender.services.TelegramSenderService;
 
@@ -10,6 +11,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,20 +29,40 @@ public class WatermarkServiceImpl implements WatermarkService {
 
     @Override
     public void addWatermarkToPhoto(MultipartFile inputPhoto) throws IOException {
-
         if (inputPhoto == null || inputPhoto.isEmpty()) {
             throw new IOException("Файл порожній або відсутній");
         }
 
-        byte[] bytes = inputPhoto.getBytes();
-        BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(bytes));
+        BufferedImage watermarkedImage = applyWatermark(inputPhoto.getBytes());
+
+        Path tempFile = Files.createTempFile("product_", ".png");
+        try {
+            ImageIO.write(watermarkedImage, "png", tempFile.toFile());
+            telegramSenderService.sendPhotoToTelegram(tempFile.toFile());
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Override
+    public byte[] createWatermarkedImageBytes(byte[] originalBytes) throws IOException {
+        BufferedImage watermarkedImage = applyWatermark(originalBytes);
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            ImageIO.write(watermarkedImage, "png", baos);
+            return baos.toByteArray();
+        }
+    }
+
+    private BufferedImage applyWatermark(byte[] imageBytes) throws IOException {
+        BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
 
         if (originalImage == null) {
             throw new IOException("Не вдалося прочитати зображення. Можливо, непідтримуваний формат.");
         }
 
-        BufferedImage resizedImage = new BufferedImage(TARGET_WIDTH, TARGET_HEIGHT, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = resizedImage.createGraphics();
+        BufferedImage watermarkedImage = new BufferedImage(TARGET_WIDTH, TARGET_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = watermarkedImage.createGraphics();
 
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
@@ -53,22 +75,14 @@ public class WatermarkServiceImpl implements WatermarkService {
 
         BufferedImage logo = ImageIO.read(new File(LOGO_PATH));
         if (logo != null) {
-
             int padding = 80;
             int x = TARGET_WIDTH - logo.getWidth() - padding;
             int y = TARGET_HEIGHT - logo.getHeight() - padding;
-
             g2d.drawImage(logo, x, y, null);
         }
 
         g2d.dispose();
 
-        Path tempFile = Files.createTempFile("product_", ".png");
-        try {
-            ImageIO.write(resizedImage, "png", tempFile.toFile());
-            telegramSenderService.sendPhotoToTelegram(tempFile.toFile());
-        } finally {
-            Files.deleteIfExists(tempFile);
-        }
+        return watermarkedImage;
     }
 }

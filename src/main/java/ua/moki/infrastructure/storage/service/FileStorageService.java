@@ -9,4 +9,6 @@ public interface FileStorageService {
     String uploadUserPhoto(MultipartFile file, String folder);
     void delete(String key);
     void deleteAllFiles(List<String> keys);
+    void generateWatermarksForExistingImages(List<String> imageIds);
+
 }

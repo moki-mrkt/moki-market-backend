@@ -170,12 +170,12 @@ public abstract class AbstractYmlExporter {
         });
     }
 
-    protected List<String> getPictureUrls(Product product, Integer limit) {
+    protected List<String> getPictureUrls(Product product, Integer limit, String suffix) {
         var stream = product.getImages().stream();
         if (limit != null) {
             stream = stream.limit(limit);
         }
-        return stream.map(image -> storageUrl + image.getImageId() + "_large.webp").toList();
+        return stream.map(image -> storageUrl + image.getImageId() + suffix).toList();
     }
 
     protected BigDecimal calculatePrice(BigDecimal price, BigDecimal purchasePrice) {

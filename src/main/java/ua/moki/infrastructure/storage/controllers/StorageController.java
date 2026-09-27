@@ -7,8 +7,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ua.moki.infrastructure.storage.service.FileStorageService;
-import ua.moki.modules.products.domains.Product;
-import ua.moki.modules.products.domains.ProductImage;
 import ua.moki.modules.products.repositories.ProductRepository;
 
 import java.util.List;
@@ -41,13 +39,14 @@ public class StorageController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> generateWatermarksBatch() {
 
-        List<String> imageIds = productRepository.findAllProductImageIds();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            List<String> imageIds = productRepository.findAllProductImageIds();
 
-        // imageIds має містити список ключів, наприклад: ["products/09785845-93c5-4aa5-b0ed-066a59c250e9", ...]
-        fileStorageService.generateWatermarksForExistingImages(imageIds);
-        return ResponseEntity.ok("Процес генерації вотермарок успішно завершено для " + imageIds.size() + " файлів.");
+            fileStorageService.generateWatermarksForExistingImages(imageIds);
+        });
+
+        return ResponseEntity.accepted().body("Генерацію вотермарок запущено у фоні для фото. Слідкуйте за прогресом у логах бекенду.");
     }
-
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     public ResponseEntity<Map<String, String>> uploadUserPhoto(

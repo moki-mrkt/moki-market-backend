@@ -1,6 +1,8 @@
 package ua.moki.infrastructure.storage.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -10,10 +12,7 @@ import ua.moki.modules.sender.services.TelegramSenderService;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -23,9 +22,22 @@ public class WatermarkServiceImpl implements WatermarkService {
     @Autowired
     private TelegramSenderService telegramSenderService;
 
-    private static final String LOGO_PATH = "src/main/resources/static/logo.png";
     private static final int TARGET_WIDTH = 1000;
     private static final int TARGET_HEIGHT = 1000;
+
+    private BufferedImage cachedLogo;
+
+    @PostConstruct
+    public void init() {
+        try (InputStream is = new ClassPathResource("static/logo.png").getInputStream()) {
+            this.cachedLogo = ImageIO.read(is);
+            if (this.cachedLogo == null) {
+                System.err.println("Попередження: Логотип static/logo.png не вдалося розпізнати як зображення.");
+            }
+        } catch (IOException e) {
+            System.err.println("Не вдалося завантажити логотип з classpath: " + e.getMessage());
+        }
+    }
 
     @Override
     public void addWatermarkToPhoto(MultipartFile inputPhoto) throws IOException {
@@ -73,12 +85,11 @@ public class WatermarkServiceImpl implements WatermarkService {
             System.out.println("Помилка: Основне фото не було намальоване на полотні");
         }
 
-        BufferedImage logo = ImageIO.read(new File(LOGO_PATH));
-        if (logo != null) {
+        if (cachedLogo != null) {
             int padding = 80;
-            int x = TARGET_WIDTH - logo.getWidth() - padding;
-            int y = TARGET_HEIGHT - logo.getHeight() - padding;
-            g2d.drawImage(logo, x, y, null);
+            int x = TARGET_WIDTH - cachedLogo.getWidth() - padding;
+            int y = TARGET_HEIGHT - cachedLogo.getHeight() - padding;
+            g2d.drawImage(cachedLogo, x, y, null);
         }
 
         g2d.dispose();

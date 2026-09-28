@@ -50,6 +50,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
         return folder + "/" + baseUuid;
     }
+
     private void uploadToS3(String key, byte[] bytes, String contentType) {
         PutObjectRequest putOb = PutObjectRequest.builder()
                 .bucket(bucket)
@@ -112,35 +113,5 @@ public class FileStorageServiceImpl implements FileStorageService {
         expandedKeys.add(key + "_logo.png");
 
         return expandedKeys;
-    }
-
-    @Override
-    public void generateWatermarksForExistingImages(List<String> imageIds) {
-        String sourceSuffix = "_large.webp";
-
-        for (String baseKey : imageIds) {
-            String sourceKey = baseKey + sourceSuffix;
-            String targetLogoKey = baseKey + "_logo.png";
-
-            try {
-                GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(sourceKey)
-                        .build();
-
-                byte[] imageBytes = s3Client.getObject(getObjectRequest).readAllBytes();
-
-                byte[] watermarkedBytes = watermarkService.createWatermarkedImageBytes(imageBytes);
-
-                uploadToS3(targetLogoKey, watermarkedBytes, "image/png");
-
-                log.info("Успішно згенеровано вотермарку для: {}", targetLogoKey);
-
-            } catch (NoSuchKeyException e) {
-                log.warn("Пропущено: оригінальне фото не знайдено за ключем {}", sourceKey);
-            } catch (Exception e) {
-                log.error("Помилка генерації вотермарки для ключа {}: {}", baseKey, e.getMessage());
-            }
-        }
     }
 }

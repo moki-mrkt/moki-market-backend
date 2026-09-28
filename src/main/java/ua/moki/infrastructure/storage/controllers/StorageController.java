@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import ua.moki.infrastructure.storage.service.FileStorageService;
 import ua.moki.modules.products.repositories.ProductRepository;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -35,18 +34,6 @@ public class StorageController {
         ));
     }
 
-    @PostMapping("/generate-watermarks-batch")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> generateWatermarksBatch() {
-
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            List<String> imageIds = productRepository.findAllProductImageIds();
-
-            fileStorageService.generateWatermarksForExistingImages(imageIds);
-        });
-
-        return ResponseEntity.accepted().body("Генерацію вотермарок запущено у фоні для фото. Слідкуйте за прогресом у логах бекенду.");
-    }
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     public ResponseEntity<Map<String, String>> uploadUserPhoto(

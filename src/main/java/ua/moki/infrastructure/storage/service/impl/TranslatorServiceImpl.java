@@ -31,13 +31,11 @@ public class TranslatorServiceImpl implements TranslatorService {
             return null;
         }
 
-        // 1. Пакуємо всі текстові поля в один список
         List<String> textsToTranslate = new ArrayList<>();
         textsToTranslate.add(translateUaDTO.name() != null ? translateUaDTO.name() : "");
         textsToTranslate.add(translateUaDTO.subcategory() != null ? translateUaDTO.subcategory() : "");
         textsToTranslate.add(translateUaDTO.description() != null ? translateUaDTO.description() : "");
 
-        // Пакуємо характеристики (і ключі, і значення, щоб перекласти все)
         if (translateUaDTO.characteristics() != null) {
             for (Map.Entry<String, String> entry : translateUaDTO.characteristics().entrySet()) {
                 textsToTranslate.add(entry.getKey() != null ? entry.getKey() : "");
@@ -45,7 +43,6 @@ public class TranslatorServiceImpl implements TranslatorService {
             }
         }
 
-        // 2. Формуємо безпечне тіло запиту через Map
         Map<String, Object> requestBody = Map.of(
                 "text", textsToTranslate,
                 "source_lang", "UK",
@@ -63,13 +60,11 @@ public class TranslatorServiceImpl implements TranslatorService {
             Map<String, Object> response = restTemplate.postForObject(DEEPL_URL, request, Map.class);
             List<String> translatedTexts = extractTextFromResponse(response);
 
-            // Якщо щось пішло не так і масиви не збігаються, повертаємо оригінал
             if (translatedTexts.isEmpty() || translatedTexts.size() != textsToTranslate.size()) {
                 log.warn("DeepL повернув некоректну кількість перекладів.");
                 return translateUaDTO;
             }
 
-            // 4. Розпаковуємо перекладений список назад у DTO
             String nameRu = translatedTexts.get(0);
             String subcategoryRu = translatedTexts.get(1);
             String descriptionRu = translatedTexts.get(2);
@@ -88,7 +83,6 @@ public class TranslatorServiceImpl implements TranslatorService {
 
         } catch (Exception e) {
             log.error("Помилка під час перекладу: {}", e.getMessage());
-            // У разі помилки зв'язку з DeepL повертаємо оригінальний об'єкт, щоб не зламати фронтенд
             return translateUaDTO;
         }
     }

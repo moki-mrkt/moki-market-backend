@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import ua.moki.infrastructure.storage.service.WatermarkService;
 import ua.moki.modules.sender.services.TelegramSenderService;
 

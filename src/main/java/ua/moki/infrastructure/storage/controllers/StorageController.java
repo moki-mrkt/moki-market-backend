@@ -7,7 +7,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ua.moki.infrastructure.storage.service.FileStorageService;
-import ua.moki.modules.products.repositories.ProductRepository;
 
 import java.util.Map;
 
@@ -18,7 +17,6 @@ public class StorageController {
 
     @Value("${s3.public_url}")
     private String urlBucket;
-    private final ProductRepository productRepository;
     private final FileStorageService fileStorageService;
 
 

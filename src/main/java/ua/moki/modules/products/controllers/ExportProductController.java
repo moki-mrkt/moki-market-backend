@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ua.moki.modules.products.enums.ProductCategory;
-import ua.moki.modules.products.enums.ProductType;
 import ua.moki.modules.products.services.exports.KastaExport;
 import ua.moki.modules.products.services.exports.PromExport;
 import ua.moki.modules.products.services.exports.RozetkaExport;
@@ -24,21 +23,21 @@ public class ExportProductController {
     private final RozetkaExport rozetkaExport;
     private final KastaExport kastaExport;
 
-    @GetMapping(value = "/rozetka/candies", produces = MediaType.APPLICATION_XML_VALUE)
+    @GetMapping(value = "/rozetka", produces = MediaType.APPLICATION_XML_VALUE)
     @PreAuthorize("permitAll()")
     @SecurityRequirements()
     public ResponseEntity<String> rozetkaCandies(@RequestParam ProductCategory category, @RequestParam String subcategory) {
         return ResponseEntity.ok(rozetkaExport.generate(category, subcategory));
     }
 
-    @GetMapping(value = "/kasta/candies", produces = MediaType.APPLICATION_XML_VALUE)
+    @GetMapping(value = "/kasta", produces = MediaType.APPLICATION_XML_VALUE)
     @PreAuthorize("permitAll()")
     @SecurityRequirements()
     public ResponseEntity<String> kastaCandies(@RequestParam ProductCategory category, @RequestParam String subcategory) {
         return ResponseEntity.ok(kastaExport.generate(category, subcategory));
     }
 
-    @GetMapping(value = "/prom/sweets", produces = MediaType.APPLICATION_XML_VALUE)
+    @GetMapping(value = "/prom", produces = MediaType.APPLICATION_XML_VALUE)
     @PreAuthorize("permitAll()")
     @SecurityRequirements()
     public ResponseEntity<String> promSweets(@RequestParam ProductCategory category, @RequestParam String subcategory) {

@@ -9,6 +9,7 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.modules.products.domains.Product;
+import ua.moki.modules.products.domains.ProductWeightOption;
 import ua.moki.modules.products.dtos.yml_catalog.*;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
@@ -137,7 +138,7 @@ public abstract class AbstractYmlExporter {
                         .filter(opt -> Boolean.TRUE.equals(opt.getIsExported()))
                         .map(opt -> {
                             String uniqueId = product.getId() + "-" + opt.getWeightValue();
-                            String weightName = product.getName() + " " + opt.getWeightValue() + "г";
+                            String weightName = getWeightName(product, opt);
 
                             BigDecimal optionPurchasePrice = null;
                             if (product.getPurchasePrice() != null) {
@@ -168,6 +169,20 @@ public abstract class AbstractYmlExporter {
                     product.getInitOfMeasure()
             ));
         });
+    }
+
+    private static String getWeightName(Product product, ProductWeightOption opt) {
+        double weightVal = opt.getWeightValue();
+        String weightStr;
+
+        if (weightVal >= 1000) {
+            double kg = weightVal / 1000.0;
+            weightStr = (kg % 1 == 0) ? (int) kg + " кг" : kg + " кг";
+        } else {
+            weightStr = (int) weightVal + " г";
+        }
+
+        return product.getName() + " " + weightStr;
     }
 
     protected List<String> getPictureUrls(Product product, Integer limit, String suffix) {

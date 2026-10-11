@@ -101,7 +101,11 @@ public abstract class AbstractYmlExporter {
 
         String offerNameRu = offerName;
         if (product.getNameRu() != null && !product.getNameRu().isBlank()) {
-            offerNameRu = offerName.replace(product.getName(), product.getNameRu());
+            if (offerId.contains("-")) {
+                offerNameRu = buildWeightName(product.getNameRu(), weightValue.doubleValue());
+            } else {
+                offerNameRu = product.getNameRu();
+            }
         }
 
         String htmlDescription = product.getDescription() != null
@@ -138,7 +142,7 @@ public abstract class AbstractYmlExporter {
                         .filter(opt -> Boolean.TRUE.equals(opt.getIsExported()))
                         .map(opt -> {
                             String uniqueId = product.getId() + "-" + opt.getWeightValue();
-                            String weightName = getWeightName(product, opt);
+                            String weightName = buildWeightName(product.getName(), opt.getWeightValue());
 
                             BigDecimal optionPurchasePrice = null;
                             if (product.getPurchasePrice() != null) {
@@ -171,10 +175,12 @@ public abstract class AbstractYmlExporter {
         });
     }
 
-    private static String getWeightName(Product product, ProductWeightOption opt) {
-        double weightVal = opt.getWeightValue();
-        String weightStr;
+    private static String buildWeightName(String baseName, double weightVal) {
+        if (baseName == null || baseName.isBlank()) {
+            return "";
+        }
 
+        String weightStr;
         if (weightVal >= 1000) {
             double kg = weightVal / 1000.0;
             weightStr = (kg % 1 == 0) ? (int) kg + " кг" : kg + " кг";
@@ -182,7 +188,11 @@ public abstract class AbstractYmlExporter {
             weightStr = (int) weightVal + " г";
         }
 
-        return product.getName() + " " + weightStr;
+        String cleanBaseName = baseName
+                .replaceAll("(?iu)\\s+(?:по\\s+)?\\d+(?:[.,]\\d+)?\\s*(?:кг|г)\\.?\\s*$", "")
+                .trim();
+
+        return cleanBaseName + " " + weightStr;
     }
 
     protected List<String> getPictureUrls(Product product, Integer limit, String suffix) {

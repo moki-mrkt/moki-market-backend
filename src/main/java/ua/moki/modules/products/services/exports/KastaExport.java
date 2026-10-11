@@ -67,10 +67,10 @@ public class KastaExport extends AbstractYmlExporter {
                 "101",
                 getPictureUrls(product, null, "_logo.png"),
                 product.getManufacturerOfTheProduct(),
+                offerNameRu,
                 offerName,
-                null,
-                product.getDescription(),
-                null,
+                htmlDescriptionRu,
+                htmlDescription,
                 params
         );
     }

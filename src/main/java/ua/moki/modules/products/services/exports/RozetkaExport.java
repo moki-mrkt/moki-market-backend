@@ -24,7 +24,7 @@ public class RozetkaExport extends AbstractYmlExporter {
     }
 
     @Override
-    protected String getMarketplaceCategoryId(ProductCategory category) {
+    protected String getRzCategoryId(ProductCategory category) {
         return category.getRozetkaId();
     }
 

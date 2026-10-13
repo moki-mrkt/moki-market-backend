@@ -26,7 +26,7 @@ public class PromExport extends AbstractYmlExporter {
     }
 
     @Override
-    protected String getMarketplaceCategoryId(ProductCategory category) {
+    protected String getPortalCategoryId(ProductCategory category) {
         return category.getPromId();
     }
 

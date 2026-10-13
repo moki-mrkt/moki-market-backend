@@ -71,9 +71,16 @@ public abstract class AbstractYmlExporter {
     }
 
     protected abstract String getMarketplaceName();
-    protected abstract String getMarketplaceCategoryId(ProductCategory category);
     protected abstract BigDecimal getCommissionRate();
     protected abstract BigDecimal getFixedFee(BigDecimal estimatedFinalPrice);
+
+    protected String getRzCategoryId(ProductCategory category) {
+        return null;
+    }
+
+    protected String getPortalCategoryId(ProductCategory category) {
+        return null;
+    }
 
     // Специфічні деталі конструювання Offer під конкретний маркетплейс
     protected abstract List<Param> buildParams(Product product, BigDecimal weightValue, String weightUnit);
@@ -125,8 +132,9 @@ public abstract class AbstractYmlExporter {
 
     protected List<Category> getCategories(ProductCategory category) {
         String internalId = String.valueOf(category.ordinal() + 1);
-        String marketplaceId = getMarketplaceCategoryId(category);
-        return List.of(new Category(internalId, null, marketplaceId, category.getTitle()));
+        String rzId = getRzCategoryId(category);
+        String portalId = getPortalCategoryId(category);
+        return List.of(new Category(internalId, rzId, portalId, category.getTitle()));
     }
 
     protected Stream<Offer> getOffersStream(ProductCategory category, String subcategory, OfferMapper mapper) {

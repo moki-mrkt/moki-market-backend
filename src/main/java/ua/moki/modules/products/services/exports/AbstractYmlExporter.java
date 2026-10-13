@@ -9,7 +9,6 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import ua.moki.modules.products.domains.Product;
-import ua.moki.modules.products.domains.ProductWeightOption;
 import ua.moki.modules.products.dtos.yml_catalog.*;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
@@ -80,13 +79,14 @@ public abstract class AbstractYmlExporter {
     protected abstract List<Param> buildParams(Product product, BigDecimal weightValue, String weightUnit);
     protected abstract Offer createOffer(Product product, String offerId, String available,
                                          BigDecimal calculatedPrice, String offerName, String offerNameRu,
-                                         String htmlDescription, String htmlDescriptionRu, List<Param> params);
+                                         String htmlDescription, String htmlDescriptionRu, List<Param> params,
+                                         String categoryId);
 
     @FunctionalInterface
     public interface OfferMapper {
         Offer map(Product product, String offerId, String offerName,
                   BigDecimal currentPrice, BigDecimal currentPurchasePrice,
-                  BigDecimal weightValue, String weightUnit);
+                  BigDecimal weightValue, String weightUnit, String categoryId);
     }
 
     protected Offer mapToOffer(Product product,
@@ -95,7 +95,8 @@ public abstract class AbstractYmlExporter {
                                BigDecimal targetPrice,
                                BigDecimal targetPurchasePrice,
                                BigDecimal weightValue,
-                               String weightUnit) {
+                               String weightUnit,
+                               String categoryId) {
         BigDecimal calculatedBasePrice = calculatePrice(targetPrice, targetPurchasePrice);
         String available = product.getAvailability() == ProductAvailability.IN_STOCK ? "true" : "false";
 
@@ -119,7 +120,7 @@ public abstract class AbstractYmlExporter {
         List<Param> params = buildParams(product, weightValue, weightUnit);
 
         return createOffer(product, offerId, available, calculatedBasePrice,
-                offerName, offerNameRu, htmlDescription, htmlDescriptionRu, params);
+                offerName, offerNameRu, htmlDescription, htmlDescriptionRu, params, categoryId);
     }
 
     protected List<Category> getCategories(ProductCategory category) {
@@ -129,6 +130,8 @@ public abstract class AbstractYmlExporter {
     }
 
     protected Stream<Offer> getOffersStream(ProductCategory category, String subcategory, OfferMapper mapper) {
+        String internalCategoryId = String.valueOf(category.ordinal() + 1);
+
         List<Product> products = (subcategory != null && !subcategory.isBlank())
                 ? productRepository.findAllByProductCategoryAndSubcategory(category, subcategory, Pageable.unpaged()).getContent()
                 : productRepository.findAllByProductCategory(category, Pageable.unpaged()).getContent();
@@ -158,7 +161,8 @@ public abstract class AbstractYmlExporter {
                                     opt.getPrice(),
                                     optionPurchasePrice,
                                     BigDecimal.valueOf(opt.getWeightValue()),
-                                    "г"
+                                    "г",
+                                    internalCategoryId
                             );
                         });
             }
@@ -170,7 +174,8 @@ public abstract class AbstractYmlExporter {
                     product.getPrice(),
                     product.getPurchasePrice(),
                     BigDecimal.valueOf(product.getValueOfInitOfMeasure()),
-                    product.getInitOfMeasure()
+                    product.getInitOfMeasure(),
+                    internalCategoryId
             ));
         });
     }

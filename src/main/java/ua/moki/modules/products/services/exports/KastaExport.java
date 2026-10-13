@@ -51,7 +51,8 @@ public class KastaExport extends AbstractYmlExporter {
     @Override
     protected Offer createOffer(Product product, String offerId, String available,
                                 BigDecimal calculatedPrice, String offerName, String offerNameRu,
-                                String htmlDescription, String htmlDescriptionRu, List<Param> params) {
+                                String htmlDescription, String htmlDescriptionRu, List<Param> params,
+                                String categoryId) {
         return new Offer(
                 offerId,
                 available,
@@ -64,7 +65,7 @@ public class KastaExport extends AbstractYmlExporter {
                 100,
                 "https://moki.com.ua/products/" + product.getSlug(),
                 "UAH",
-                "101",
+                categoryId,
                 getPictureUrls(product, null, "_logo.png"),
                 product.getManufacturerOfTheProduct(),
                 offerNameRu,

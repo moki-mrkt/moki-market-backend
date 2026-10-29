@@ -200,3 +200,19 @@ databaseChangeLog:
             tableName: orders
             columnName: email
             columnDataType: VARCHAR(255)
+  - changeSet:
+      id: add-weight-column-to-order-items
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: order_items
+                columnName: weight
+      changes:
+        - addColumn:
+            tableName: order_items
+            columns:
+              - column:
+                  name: weight
+                  type: integer

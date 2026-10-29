@@ -2,8 +2,11 @@ package ua.moki.modules.products.services.impl;
 
 
 import com.github.slugify.Slugify;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import ua.moki.modules.analytics.events.SearchPerformedEvent;
 import ua.moki.modules.orders.repositories.CartItemRepository;
 import ua.moki.modules.products.domains.Product;
 import ua.moki.modules.products.dtos.*;
@@ -46,6 +52,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductSpecifications productSpecifications;
     private final FavoriteProductRepository favoriteProductRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final Slugify slugify = Slugify.builder().transliterator(true)
             .customReplacement("х", "kh")
@@ -59,13 +66,15 @@ public class ProductServiceImpl implements ProductService {
                               CartItemRepository cartItemRepository,
                               ProductRepository productRepository,
                               ProductSpecifications productSpecifications,
-                              FavoriteProductRepository favoriteProductRepository) {
+                              FavoriteProductRepository favoriteProductRepository,
+                              ApplicationEventPublisher eventPublisher) {
         this.clock = clock;
         this.productMapper = productMapper;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
         this.productSpecifications = productSpecifications;
         this.favoriteProductRepository = favoriteProductRepository;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -247,12 +256,73 @@ public class ProductServiceImpl implements ProductService {
 
         Map<String, Double> minMax = productSpecifications.getMinMaxPricesBySpecification(limitSpec);
 
+        if (pageable.getPageNumber() == 0) {
+            publishSearchAnalyticsEvent(request, products.getTotalElements());
+        }
+
         return new SearchResponse(
                 products.map(getProductMapperFunction()),
                 subcategories,
                 minMax.get("minPrice"),
                 minMax.get("maxPrice")
         );
+    }
+
+    private void publishSearchAnalyticsEvent(ProductSearchRequestDTO request, long totalElements) {
+        try {
+            UUID userPublicId = extractCurrentUserPublicId();
+            String locale = LocaleContextHolder.getLocale().getLanguage();
+            String clientIp = null;
+            String userAgent = null;
+
+            if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs) {
+                HttpServletRequest httpRequest = attrs.getRequest();
+                clientIp = extractClientIp(httpRequest);
+                userAgent = httpRequest.getHeader("User-Agent");
+            }
+
+            eventPublisher.publishEvent(new SearchPerformedEvent(
+                    request.query(),
+                    totalElements,
+                    request.category(),
+                    request.subcategory(),
+                    request.minPrice() != null ? BigDecimal.valueOf(request.minPrice()) : null,
+                    request.maxPrice() != null ? BigDecimal.valueOf(request.maxPrice()) : null,
+                    request.hasDiscount(),
+                    userPublicId,
+                    locale,
+                    clientIp,
+                    userAgent,
+                    OffsetDateTime.now(clock)
+            ));
+        } catch (Exception e) {
+            log.warn("Failed to publish search analytics event: {}", e.getMessage());
+        }
+    }
+
+    private UUID extractCurrentUserPublicId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            try {
+                return UUID.fromString(authentication.getName());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return null;
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 
     private Function<Product, ProductResponseDTO> getProductMapperFunction() {

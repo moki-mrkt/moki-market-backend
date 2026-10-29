@@ -1,0 +1,94 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-search-analytics-table
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: search_analytics
+      changes:
+        - createTable:
+            tableName: search_analytics
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: query
+                  type: TEXT
+              - column:
+                  name: normalized_query
+                  type: VARCHAR(255)
+              - column:
+                  name: results_count
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: zero_results
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category
+                  type: VARCHAR(32)
+              - column:
+                  name: subcategories
+                  type: TEXT
+              - column:
+                  name: min_price
+                  type: NUMERIC(19, 2)
+              - column:
+                  name: max_price
+                  type: NUMERIC(19, 2)
+              - column:
+                  name: has_discount
+                  type: BOOLEAN
+              - column:
+                  name: user_public_id
+                  type: UUID
+              - column:
+                  name: locale
+                  type: VARCHAR(16)
+              - column:
+                  name: client_ip
+                  type: VARCHAR(64)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_search_analytics_created_at
+            tableName: search_analytics
+            columns:
+              - column:
+                  name: created_at
+        - createIndex:
+            indexName: idx_search_analytics_norm_query
+            tableName: search_analytics
+            columns:
+              - column:
+                  name: normalized_query
+        - createIndex:
+            indexName: idx_search_analytics_zero_results
+            tableName: search_analytics
+            columns:
+              - column:
+                  name: zero_results
+              - column:
+                  name: created_at
+        - createIndex:
+            indexName: idx_search_analytics_category
+            tableName: search_analytics
+            columns:
+              - column:
+                  name: category
+              - column:
+                  name: created_at

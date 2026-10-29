@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/orders").permitAll()
+                        .requestMatchers("/payments/liqpay/**").permitAll()
                         .requestMatchers( "/storage").permitAll()
                         .requestMatchers(HttpMethod.GET, "/feedbacks/store").permitAll()
                         .requestMatchers(HttpMethod.GET, "/feedbacks/product/**").permitAll()

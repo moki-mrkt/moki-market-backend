@@ -35,3 +35,9 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changeset/create-feedbacks-table-20012026.yaml
+
+  - include:
+      file: db/changelog/changeset/create-search-analytics-table-29102026.yaml
+
+  - include:
+      file: db/changelog/changeset/add-liqpay-payment-columns-29102026.yaml

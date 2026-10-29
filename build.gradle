@@ -50,6 +50,7 @@ dependencies {
 
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     implementation("org.commonmark:commonmark:0.30.0")
+    implementation 'org.apache.poi:poi-ooxml:5.4.0'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

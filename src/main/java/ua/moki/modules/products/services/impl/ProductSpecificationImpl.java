@@ -29,7 +29,9 @@ public class ProductSpecificationImpl implements ProductSpecifications {
 
                 String searchSchema = "%" + searchTerm + "%";
                 Predicate nameLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), searchSchema);
+                Predicate nameRuLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("nameRu")), searchSchema);
                 Predicate descLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), searchSchema);
+                Predicate descRuLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("descriptionRu")), searchSchema);
 
                 Expression<Double> nameSimilarity = criteriaBuilder.function(
                         "similarity",
@@ -40,7 +42,7 @@ public class ProductSpecificationImpl implements ProductSpecifications {
 
                 Predicate fuzzyMatch = criteriaBuilder.greaterThan(nameSimilarity, 0.3);
 
-                predicates.add(criteriaBuilder.or(nameLike, descLike, fuzzyMatch));
+                predicates.add(criteriaBuilder.or(nameLike, nameRuLike, descLike, descRuLike, fuzzyMatch));
             }
 
             if (request.category() != null) {
@@ -56,7 +58,9 @@ public class ProductSpecificationImpl implements ProductSpecifications {
             }
 
             if (!excludeSubcategories && request.subcategory() != null && !request.subcategory().isEmpty()) {
-                predicates.add(root.get("subcategory").in(request.subcategory()));
+                Predicate matchUa = root.get("subcategory").in(request.subcategory());
+                Predicate matchRu = root.get("subcategoryRu").in(request.subcategory());
+                predicates.add(criteriaBuilder.or(matchUa, matchRu));
             }
 
             if (Boolean.TRUE.equals(request.hasDiscount())) {

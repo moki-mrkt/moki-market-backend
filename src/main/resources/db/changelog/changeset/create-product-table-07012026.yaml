@@ -248,6 +248,7 @@ databaseChangeLog:
   - changeSet:
       id: add-product-types-and-variants
       author: KyryloPyvovarov
+      validCheckSum: ANY
       changes:
         - addColumn:
             tableName: products
@@ -303,18 +304,6 @@ databaseChangeLog:
                   name: is_default
                   type: boolean
                   defaultValueBoolean: false
-        - addColumn:
-            tableName: cart_items
-            columns:
-              - column:
-                  name: weight
-                  type: integer
-        - addColumn:
-            tableName: order_items
-            columns:
-              - column:
-                  name: weight
-                  type: integer
   - changeSet:
       id: drop-weight-price-column
       author: KyryloPyvovarov

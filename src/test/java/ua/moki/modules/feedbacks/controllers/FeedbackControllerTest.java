@@ -24,10 +24,7 @@ import ua.moki.configuration.JwtCryptoConfig;
 import ua.moki.configuration.SecurityConfig;
 import ua.moki.configuration.entry_points.JwtAuthenticationEntryPoint;
 import ua.moki.modules.feedback.controllers.FeedbackController;
-import ua.moki.modules.feedback.dtos.FeedbackAnswerDTO;
-import ua.moki.modules.feedback.dtos.FeedbackRequestDTO;
-import ua.moki.modules.feedback.dtos.FeedbackResponseDTO;
-import ua.moki.modules.feedback.dtos.FeedbackUpdateDTO;
+import ua.moki.modules.feedback.dtos.*;
 import ua.moki.modules.feedback.services.FeedbackService;
 import ua.moki.modules.users.security.JwtFilter;
 import ua.moki.modules.users.security.jwt.AccessTokenJwsStringDeserializer;
@@ -88,9 +85,9 @@ public class FeedbackControllerTest {
     void create_shouldReturnOk() throws Exception {
 
         UUID userId = UUID.randomUUID();
-        FeedbackRequestDTO requestDTO = new FeedbackRequestDTO(1L,"Great product", 5);
+        FeedbackRequestDTO requestDTO = new FeedbackRequestDTO(1L, "Great product", 5);
         FeedbackResponseDTO responseDTO = new FeedbackResponseDTO(
-                1L, "Great product", 5, "Ivan", "Ivan","url", OffsetDateTime.now(), null, null
+                1L, "Great product", 5, "PRODUCT", "Ivan", "Ivan", "url", OffsetDateTime.now(), null, null
         );
 
         when(feedbackService.createFeedback(eq(userId), any(FeedbackRequestDTO.class)))
@@ -143,7 +140,7 @@ public class FeedbackControllerTest {
         UUID userId = UUID.randomUUID();
         FeedbackUpdateDTO updateDTO = new FeedbackUpdateDTO("Updated review comment", 4);
         FeedbackResponseDTO responseDTO = new FeedbackResponseDTO(
-                feedbackId, "Updated review comment", 4, "Ivan", "Ivan","url", OffsetDateTime.now(), null, null
+                feedbackId, "Updated review comment", 4, "PRODUCT", "Ivan", "Ivan", "url", OffsetDateTime.now(), null, null
         );
 
         when(feedbackService.updateFeedback(eq(feedbackId), any(FeedbackUpdateDTO.class), any(Authentication.class)))
@@ -213,7 +210,7 @@ public class FeedbackControllerTest {
         Long feedbackId = 1L;
         FeedbackAnswerDTO answerDTO = new FeedbackAnswerDTO("Дякуємо за ваш відгук!");
         FeedbackResponseDTO responseDTO = new FeedbackResponseDTO(
-                feedbackId, "Коментар користувача", 5, "Ivan", "Ivan","url",
+                feedbackId, "Коментар користувача", 5, "PRODUCT", "Ivan", "Ivan", "url",
                 OffsetDateTime.now(), "Дякуємо за ваш відгук!", OffsetDateTime.now()
         );
 
@@ -221,7 +218,7 @@ public class FeedbackControllerTest {
                 .thenReturn(responseDTO);
 
         mockMvc.perform(patch("/feedbacks/{id}/answer", feedbackId)
-                        .with(user("admin").roles("ADMIN")) // Spring Security автоматично додасть ROLE_
+                        .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(answerDTO)))
                 .andExpect(status().isOk())
@@ -276,7 +273,7 @@ public class FeedbackControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /feedbacks/{id}/answer should return 404 Not Found when feedback exists")
+    @DisplayName("PATCH /feedbacks/{id}/answer should return 404 Not Found when feedback does not exist")
     void addAnswer_shouldReturnNotFound_whenFeedbackDoesNotExist() throws Exception {
         Long feedbackId = 999L;
         FeedbackAnswerDTO answerDTO = new FeedbackAnswerDTO("Answer");
@@ -348,37 +345,37 @@ public class FeedbackControllerTest {
     }
 
     @Test
-    @DisplayName("GET /feedbacks/user should return 200 OK with paged feedbacks for authorized user")
+    @DisplayName("GET /feedbacks/products/my should return 200 OK with paged product feedbacks for authorized user")
     void getFeedbacksByUserId_shouldReturnPagedFeedbacks() throws Exception {
 
         UUID userId = UUID.randomUUID();
         int page = 0;
         int size = 10;
 
-        FeedbackResponseDTO feedbackDto = new FeedbackResponseDTO(
-                1L, "Great service", 5, "Ivan", "Ivan", "url", OffsetDateTime.now(), null, null
+        ProductFeedbackResponseDTO feedbackDto = new ProductFeedbackResponseDTO(
+                1L, "Great product", 5, "Ivan", "Ivan", "url", "Product Name", "product-name", OffsetDateTime.now(), null, null
         );
-        Page<FeedbackResponseDTO> pagedResponse = new PageImpl<>(List.of(feedbackDto));
+        Page<ProductFeedbackResponseDTO> pagedResponse = new PageImpl<>(List.of(feedbackDto));
 
-        when(feedbackService.getFeedbacksByUserId(eq(userId), eq(page), eq(size)))
+        when(feedbackService.getUserFeedbacksAboutProducts(eq(userId), eq(page), eq(size)))
                 .thenReturn(pagedResponse);
 
-        mockMvc.perform(get("/feedbacks/my")
+        mockMvc.perform(get("/feedbacks/products/my")
                         .with(user(userId.toString()).roles("CUSTOMER"))
                         .param("page", String.valueOf(page))
                         .param("size", String.valueOf(size)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1L))
-                .andExpect(jsonPath("$.content[0].comment").value("Great service"))
+                .andExpect(jsonPath("$.content[0].comment").value("Great product"))
                 .andExpect(jsonPath("$.page.totalElements").value(1));
 
-        verify(feedbackService).getFeedbacksByUserId(eq(userId), eq(page), eq(size));
+        verify(feedbackService).getUserFeedbacksAboutProducts(eq(userId), eq(page), eq(size));
     }
 
     @Test
-    @DisplayName("GET /feedbacks/user should return 401 Unauthorized for anonymous user")
+    @DisplayName("GET /feedbacks/products/my should return 401 Unauthorized for anonymous user")
     void getFeedbacksByUserId_shouldReturnUnauthorized_whenAnonymous() throws Exception {
-        mockMvc.perform(get("/feedbacks/my")
+        mockMvc.perform(get("/feedbacks/products/my")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isUnauthorized());
@@ -387,10 +384,10 @@ public class FeedbackControllerTest {
     }
 
     @Test
-    @DisplayName("GET /feedbacks/user should return 400 BadRequest when pagination parameters are negative")
+    @DisplayName("GET /feedbacks/products/my should return 400 BadRequest when pagination parameters are negative")
     void getFeedbacksByUserId_shouldReturnBadRequest_whenParamsInvalid() throws Exception {
 
-        mockMvc.perform(get("/feedbacks/my")
+        mockMvc.perform(get("/feedbacks/products/my")
                         .with(user(UUID.randomUUID().toString()).roles("CUSTOMER"))
                         .param("page", "-1")
                         .param("size", "0"))
@@ -400,16 +397,16 @@ public class FeedbackControllerTest {
     }
 
     @Test
-    @DisplayName("GET /feedbacks/user should return 200 OK with empty content when user has no feedbacks")
+    @DisplayName("GET /feedbacks/products/my should return 200 OK with empty content when user has no feedbacks")
     void getFeedbacksByUserId_shouldReturnEmptyPage_whenNoFeedbacks() throws Exception {
 
         UUID userId = UUID.randomUUID();
-        Page<FeedbackResponseDTO> emptyPage = new PageImpl<>(Collections.emptyList());
+        Page<ProductFeedbackResponseDTO> emptyPage = new PageImpl<>(Collections.emptyList());
 
-        when(feedbackService.getFeedbacksByUserId(any(UUID.class), anyInt(), anyInt()))
+        when(feedbackService.getUserFeedbacksAboutProducts(any(UUID.class), anyInt(), anyInt()))
                 .thenReturn(emptyPage);
 
-        mockMvc.perform(get("/feedbacks/my")
+        mockMvc.perform(get("/feedbacks/products/my")
                         .with(user(userId.toString()).roles("CUSTOMER"))
                         .param("page", "0")
                         .param("size", "10"))
@@ -427,7 +424,7 @@ public class FeedbackControllerTest {
         int size = 5;
 
         FeedbackResponseDTO feedbackDto = new FeedbackResponseDTO(
-                1L, "Чудовий товар!", 5, "Олена", "Ivan", "image_url", OffsetDateTime.now(), null, null
+                1L, "Чудовий товар!", 5, "PRODUCT", "Олена", "Ivan", "image_url", OffsetDateTime.now(), null, null
         );
         Page<FeedbackResponseDTO> pagedResponse = new PageImpl<>(List.of(feedbackDto));
 
@@ -462,15 +459,6 @@ public class FeedbackControllerTest {
     }
 
     @Test
-    @DisplayName("GET /feedbacks/product/{productId} should return 401 Unauthorized for anonymous user")
-    void getFeedbacksByProductId_shouldReturnUnauthorized_whenAnonymous() throws Exception {
-        mockMvc.perform(get("/feedbacks/product/100")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @DisplayName("GET /feedbacks/product/{productId} should return 200 OK with empty page if no feedbacks found")
     void getFeedbacksByProductId_shouldReturnEmptyPage_whenNoData() throws Exception {
 
@@ -498,7 +486,7 @@ public class FeedbackControllerTest {
         BigDecimal averageRating = new BigDecimal("4.5");
 
         FeedbackResponseDTO feedbackDto = new FeedbackResponseDTO(
-                1L, "Класний магазин", 5, "Марія", "Ivan", "url",
+                1L, "Класний магазин", 5, "STORE", "Марія", "Ivan", "url",
                 OffsetDateTime.now(), "Дякуємо", OffsetDateTime.now()
         );
         Page<FeedbackResponseDTO> pagedResponse = new PageImpl<>(List.of(feedbackDto));

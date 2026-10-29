@@ -9,18 +9,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.users.domains.RefreshToken;
 import ua.moki.modules.users.domains.User;
-import ua.moki.modules.users.dtos.PasswordChangeRequestDTO;
-import ua.moki.modules.users.dtos.UserCreateDTO;
-import ua.moki.modules.users.dtos.UserResponseDTO;
-import ua.moki.modules.users.dtos.UserUpdateDTO;
+import ua.moki.modules.users.dtos.*;
 import ua.moki.modules.users.repositories.RefreshTokenRepository;
 import ua.moki.modules.users.repositories.UserRepository;
-import ua.moki.modules.users.services.tokens.EmailTokenService;
 import ua.moki.modules.users.services.UserService;
 import ua.moki.modules.users.utils.enums.RoleType;
 import ua.moki.util.exceptions.EntityNotFoundException;
 import ua.moki.util.exceptions.UserAlreadyExistsException;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -38,9 +35,6 @@ public class UserServiceImplTest extends BaseIntegrationTest {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
-
-    @Autowired
-    private EmailTokenService emailTokenService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -128,8 +122,6 @@ public class UserServiceImplTest extends BaseIntegrationTest {
                 .orElseThrow(() -> new AssertionError("Manager not found in DB"));
 
         assertThat(savedManager.getRoleType()).isEqualTo(RoleType.MANAGER);
-
-
         assertThat(savedManager.isActivated()).isTrue();
         assertThat(savedManager.isAccessToAccount()).isTrue();
         assertThat(savedManager.isBlocked()).isFalse();
@@ -200,9 +192,42 @@ public class UserServiceImplTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("updateUserByAdmin updates admin-specific fields on user")
+    void updateUserByAdmin_shouldUpdateAdminFields_whenUserExists() {
+        User user = new User();
+        user.setPublicId(UUID.randomUUID());
+        user.setFirstName("AdminTarget");
+        user.setSecondName("User");
+        user.setEmail("admin.target@mail.com");
+        user.setPhoneNumber("+380991111111");
+        user.setPassword("pass");
+        user.setRoleType(RoleType.CUSTOMER);
+        user.setActivated(false);
+        user.setAccessToAccount(false);
+        user.setDeleted(false);
+        userRepository.save(user);
+
+        UserAdminUpdateDTO adminUpdateDTO = new UserAdminUpdateDTO(
+                "+380997778899",
+                LocalDate.of(1995, 5, 10),
+                true,
+                true,
+                true,
+                2
+        );
+
+        UserAdminResponseDTO result = userService.updateUserByAdmin(user.getPublicId(), adminUpdateDTO);
+
+        assertThat(result.phoneNumber()).isEqualTo("+380997778899");
+        assertThat(result.activated()).isTrue();
+        assertThat(result.accessToAccount()).isTrue();
+        assertThat(result.subscribedToNews()).isTrue();
+        assertThat(result.numberOfFailedAttempts()).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("updateUser ignores null fields in DTO (does not overwrite existing data)")
     void updateUser_shouldIgnoreNullFields_whenDtoHasNulls() {
-        // Given
         User user = new User();
         user.setPublicId(UUID.randomUUID());
         user.setFirstName("OriginalName");
@@ -241,7 +266,7 @@ public class UserServiceImplTest extends BaseIntegrationTest {
         deletedUser.setEmail("deleted.update@mail.com");
         deletedUser.setPassword("pass");
         deletedUser.setRoleType(RoleType.CUSTOMER);
-        deletedUser.setDeleted(true); // Юзер видалений
+        deletedUser.setDeleted(true);
         userRepository.save(deletedUser);
 
         UserUpdateDTO updateDTO = new UserUpdateDTO("New",
@@ -286,15 +311,15 @@ public class UserServiceImplTest extends BaseIntegrationTest {
         user.setDeleted(false);
         userRepository.save(user);
 
-        ua.moki.modules.users.domains.RefreshToken token = new ua.moki.modules.users.domains.RefreshToken();
+        RefreshToken token = new RefreshToken();
         token.setToken("token_to_be_revoked");
         token.setUser(user);
-        token.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
+        token.setExpiryDate(Instant.now().plusSeconds(3600));
         refreshTokenRepository.save(token);
 
         assertThat(refreshTokenRepository.findByToken("token_to_be_revoked")).isPresent();
 
-        userService.updateBlockStatus(user.getPublicId(), true); // Блокуємо
+        userService.updateBlockStatus(user.getPublicId(), true);
 
         User blockedUser = userRepository.findById(user.getId()).orElseThrow();
         assertThat(blockedUser.isBlocked()).isTrue();
@@ -347,165 +372,8 @@ public class UserServiceImplTest extends BaseIntegrationTest {
     @Test
     @DisplayName("updateBlockStatus throws EntityNotFoundException if user is not found or deleted")
     void updateBlockStatus_shouldThrowException_whenUserNotFound() {
-        assertThatThrownBy(() -> userService.updateBlockStatus( UUID.randomUUID(), true))
+        assertThatThrownBy(() -> userService.updateBlockStatus(UUID.randomUUID(), true))
                 .isInstanceOf(EntityNotFoundException.class);
-    }
-
-//    @Test
-//    @DisplayName("confirmEmailChange successfully changes the email and invalidates the refresh tokens")
-//    void confirmEmailChange_shouldUpdateEmailAndRevokeTokens_whenTokenIsValid() {
-//
-//        User user = new User();
-//        user.setPublicId(UUID.randomUUID());
-//        user.setFirstName("Change");
-//        user.setSecondName("Email");
-//        user.setEmail("old.email@test.com");
-//        user.setPhoneNumber("+380991112233");
-//        user.setPassword("pass");
-//        user.setRoleType(RoleType.CUSTOMER);
-//        user.setDeleted(false);
-//        userRepository.save(user);
-//
-//        RefreshToken token = new RefreshToken();
-//        token.setToken("token_to_revoke_after_email_change");
-//        token.setUser(user);
-//        token.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
-//        refreshTokenRepository.save(token);
-//
-//        String newEmail = "new.super.email@test.com";
-//        String confirmationToken = emailTokenService.generateEmailChangeToken(user.getPublicId(), newEmail);
-//
-////        userService.confirmEmailChange(confirmationToken);
-//
-//        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
-//        assertThat(updatedUser.getEmail()).isEqualTo(newEmail);
-//
-//        assertThat(refreshTokenRepository.findByToken("token_to_revoke_after_email_change")).isEmpty();
-//    }
-//
-//    @Test
-//    @DisplayName("confirmEmailChange throws UserAlreadyExistsException if the new email is already taken")
-//    void confirmEmailChange_shouldThrowException_whenNewEmailIsTaken() {
-//
-//        User user = new User();
-//        user.setPublicId(UUID.randomUUID());
-//        user.setFirstName("User");
-//        user.setSecondName("One");
-//        user.setEmail("user1@test.com");
-//        user.setPassword("pass");
-//        user.setRoleType(RoleType.CUSTOMER);
-//        userRepository.save(user);
-//
-//        User occupier = new User();
-//        occupier.setPublicId(UUID.randomUUID());
-//        occupier.setFirstName("Occupier");
-//        occupier.setSecondName("User");
-//        occupier.setEmail("taken@test.com");
-//        occupier.setPassword("pass");
-//        occupier.setRoleType(RoleType.CUSTOMER);
-//        userRepository.save(occupier);
-//
-//        String confirmationToken = emailTokenService.generateEmailChangeToken(user.getPublicId(), "taken@test.com");
-////
-////        assertThatThrownBy(() -> userService.confirmEmailChange(confirmationToken))
-////                .isInstanceOf(UserAlreadyExistsException.class)
-////                .hasMessage("Email already taken");
-//    }
-
-    @Test
-    @DisplayName("confirmEmailChange throws InvalidTokenException if the token is 'broken'")
-    void confirmEmailChange_shouldThrowException_whenTokenIsInvalid() {
-
-        String invalidToken = "invalid.jwt.token";
-
-//        assertThatThrownBy(() -> userService.confirmEmailChange(invalidToken))
-//                .isInstanceOf(ua.moki.util.exceptions.InvalidTokenException.class);
-    }
-
-    @Test
-    @DisplayName("changePassword successfully changes the password and deletes all active sessions")
-    void changePassword_shouldUpdatePasswordAndRevokeTokens_whenRequestIsValid() {
-
-        String oldPassword = "OldStrongPassword1!";
-        String newPassword = "NewStrongPassword2@";
-
-        User user = new User();
-        user.setPublicId(UUID.randomUUID());
-        user.setFirstName("Change");
-        user.setSecondName("Pass");
-        user.setEmail("changepass@test.com");
-        user.setPassword(passwordEncoder.encode(oldPassword));
-        user.setRoleType(RoleType.CUSTOMER);
-        user.setDeleted(false);
-        userRepository.save(user);
-
-        RefreshToken token = new RefreshToken();
-        token.setToken("token_before_pass_change");
-        token.setUser(user);
-        token.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
-        refreshTokenRepository.save(token);
-
-          PasswordChangeRequestDTO changeDTO = new PasswordChangeRequestDTO(
-                oldPassword,
-                newPassword,
-                newPassword
-        );
-
-//        userService.changePassword(user.getPublicId(), changeDTO);
-
-        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
-        assertThat(passwordEncoder.matches(newPassword, updatedUser.getPassword())).isTrue();
-        assertThat(passwordEncoder.matches(oldPassword, updatedUser.getPassword())).isFalse();
-
-        assertThat(refreshTokenRepository.findByToken("token_before_pass_change")).isEmpty();
-    }
-
-    @Test
-    @DisplayName("changePassword throws BadCredentialsException if the old password is incorrect")
-    void changePassword_shouldThrowException_whenCurrentPasswordIsIncorrect() {
-
-        String realPassword = "RealPassword123";
-        User user = new User();
-        user.setPublicId(UUID.randomUUID());
-        user.setFirstName("Wrong");
-        user.setSecondName("Pass");
-        user.setEmail("wrong.pass@test.com");
-        user.setPassword(passwordEncoder.encode(realPassword));
-        user.setRoleType(RoleType.CUSTOMER);
-        userRepository.save(user);
-
-        PasswordChangeRequestDTO invalidDTO = new PasswordChangeRequestDTO(
-                "NewPass123!",
-                "NewPass123!",
-                "WrongOldPass"
-        );
-
-//        assertThatThrownBy(() -> userService.changePassword(user.getPublicId(), invalidDTO))
-//                .isInstanceOf(org.springframework.security.authentication.BadCredentialsException.class)
-//                .hasMessage("Invalid current password");
-    }
-
-    @Test
-    @DisplayName("changePassword throws IllegalArgumentException if the new password matches the old one")
-    void changePassword_shouldThrowException_whenNewPasswordIsSameAsOld() {
-
-        String samePassword = "SamePassword1!";
-        User user = new User();
-        user.setPublicId(UUID.randomUUID());
-        user.setFirstName("Same");
-        user.setSecondName("Pass");
-        user.setEmail("same.pass@test.com");
-        user.setPassword(passwordEncoder.encode(samePassword));
-        user.setRoleType(RoleType.CUSTOMER);
-        userRepository.save(user);
-
-        PasswordChangeRequestDTO samePassDTO = new PasswordChangeRequestDTO(
-                samePassword, samePassword, samePassword
-        );
-
-//        assertThatThrownBy(() -> userService.changePassword(user.getPublicId(), samePassDTO))
-//                .isInstanceOf(IllegalArgumentException.class)
-//                .hasMessage("New password cannot be the same as old password");
     }
 
     @Test
@@ -614,7 +482,7 @@ public class UserServiceImplTest extends BaseIntegrationTest {
         activeUser.setPhoneNumber("+380991234567");
         activeUser.setPassword("pass");
         activeUser.setRoleType(RoleType.CUSTOMER);
-        activeUser.setDeleted(false); // Активний
+        activeUser.setDeleted(false);
         userRepository.save(activeUser);
 
         User result = userService.getActiveUserEntityByPublicId(activeUser.getPublicId());
@@ -677,7 +545,7 @@ public class UserServiceImplTest extends BaseIntegrationTest {
         assertThat(result.firstName()).isEqualTo("Dto");
         assertThat(result.secondName()).isEqualTo("Check");
         assertThat(result.email()).isEqualTo("dto.check@test.com");
-        assertThat(result.imageUrl()).isEqualTo("http://localhost:9000/moki-images/test-image-id");
+        assertThat(result.imageUrl()).isEqualTo("test-image-id");
         assertThat(result.roleType()).isEqualTo("CUSTOMER");
     }
 
@@ -710,92 +578,89 @@ public class UserServiceImplTest extends BaseIntegrationTest {
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
-//    @Test
-//    @DisplayName("getAllUser returns ALL users (active and deleted) when isDeleted == null")
-//    void getAllUser_shouldReturnAllUsers_whenIsDeletedIsNull() {
-//
-//        User activeUser = new User();
-//        activeUser.setPublicId(UUID.randomUUID());
-//        activeUser.setFirstName("Active");
-//        activeUser.setSecondName("User");
-//        activeUser.setEmail("active@test.com");
-//        activeUser.setPhoneNumber("+380991111111");
-//        activeUser.setPassword("pass");
-//        activeUser.setRoleType(RoleType.CUSTOMER);
-//        activeUser.setDeleted(false);
-//        userRepository.save(activeUser);
-//
-//        User deletedUser = new User();
-//        deletedUser.setPublicId(UUID.randomUUID());
-//        deletedUser.setFirstName("Deleted User"); // Анонімізоване ім'я
-//        deletedUser.setSecondName("");
-//        deletedUser.setEmail("deleted@test.com_deleted_123");
-//        deletedUser.setPhoneNumber("+380992222222_deleted_123");
-//        deletedUser.setPassword("");
-//        deletedUser.setRoleType(RoleType.CUSTOMER);
-//        deletedUser.setDeleted(true);
-//        userRepository.save(deletedUser);
-//
-//        Page<UserResponseDTO> result = userService.getAllUser(null, PageRequest.of(0, 10));
-//
-//        assertThat(result.getContent()).hasSize(2); // Має знайти обох
-//
-//        List<String> emails = result.getContent().stream()
-//                .map(UserResponseDTO::email)
-//                .toList();
-//        assertThat(emails).contains("active@test.com", "deleted@test.com_deleted_123");
-//    }
-//
-//    @Test
-//    @DisplayName("getAllUser returns ONLY ACTIVE users when isDeleted == false")
-//    void getAllUser_shouldReturnOnlyActiveUsers_whenIsDeletedIsFalse() {
-//
-//        createTestUser("Active One", false);
-//        createTestUser("Deleted One", true);
-//        createTestUser("Active Two", false);
-//
-//        Page<UserResponseDTO> result = userService.getAllUser(false, PageRequest.of(0, 10));
-//
-//        assertThat(result.getContent()).hasSize(2);
-//        assertThat(result.getContent())
-//                .extracting(UserResponseDTO::firstName)
-//                .containsExactlyInAnyOrder("Active One", "Active Two");
-//
-//        assertThat(result.getContent())
-//                .extracting(UserResponseDTO::firstName)
-//                .doesNotContain("Deleted One");
-//    }
-//
-//    @Test
-//    @DisplayName("getAllUser returns ONLY DELETED users when isDeleted == true")
-//    void getAllUser_shouldReturnOnlyDeletedUsers_whenIsDeletedIsTrue() {
-//
-//        createTestUser("Active User", false);
-//        createTestUser("Deleted User 1", true);
-//        createTestUser("Deleted User 2", true);
-//
-//        Page<UserResponseDTO> result = userService.getAllUser(true, PageRequest.of(0, 10));
-//
-//        assertThat(result.getContent()).hasSize(2);
-//        assertThat(result.getContent())
-//                .extracting(UserResponseDTO::firstName)
-//                .containsExactlyInAnyOrder("Deleted User 1", "Deleted User 2");
-//    }
-//
-//    @Test
-//    @DisplayName("getAllUser correctly handles pagination")
-//    void getAllUser_shouldRespectPagination() {
-//
-//        for (int i = 1; i <= 5; i++) {
-//            createTestUser("User " + i, false);
-//        }
-//
-//        Page<UserResponseDTO> page1 = userService.getAllUser(false, PageRequest.of(0, 2));
-//
-//        assertThat(page1.getContent()).hasSize(2);
-//        assertThat(page1.getTotalElements()).isEqualTo(5);
-//        assertThat(page1.getTotalPages()).isEqualTo(3);
-//    }
+    @Test
+    @DisplayName("getAllUser returns ALL users (active and deleted) when isDeleted == null")
+    void getAllUser_shouldReturnAllUsers_whenIsDeletedIsNull() {
+
+        User activeUser = new User();
+        activeUser.setPublicId(UUID.randomUUID());
+        activeUser.setFirstName("Active");
+        activeUser.setSecondName("User");
+        activeUser.setEmail("active@test.com");
+        activeUser.setPhoneNumber("+380991111111");
+        activeUser.setPassword("pass");
+        activeUser.setRoleType(RoleType.CUSTOMER);
+        activeUser.setDeleted(false);
+        userRepository.save(activeUser);
+
+        User deletedUser = new User();
+        deletedUser.setPublicId(UUID.randomUUID());
+        deletedUser.setFirstName("Deleted User");
+        deletedUser.setSecondName("");
+        deletedUser.setEmail("deleted@test.com_deleted_123");
+        deletedUser.setPhoneNumber("+380992222222_deleted_123");
+        deletedUser.setPassword("");
+        deletedUser.setRoleType(RoleType.CUSTOMER);
+        deletedUser.setDeleted(true);
+        userRepository.save(deletedUser);
+
+        Page<UserAdminResponseDTO> result = userService.getAllUser(null, null, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(2);
+
+        List<String> emails = result.getContent().stream()
+                .map(UserAdminResponseDTO::email)
+                .toList();
+        assertThat(emails).contains("active@test.com", "deleted@test.com_deleted_123");
+    }
+
+    @Test
+    @DisplayName("getAllUser returns ONLY ACTIVE users when isDeleted == false")
+    void getAllUser_shouldReturnOnlyActiveUsers_whenIsDeletedIsFalse() {
+
+        createTestUser("Active One", false);
+        createTestUser("Deleted One", true);
+        createTestUser("Active Two", false);
+
+        Page<UserAdminResponseDTO> result = userService.getAllUser(null, false, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent())
+                .extracting(UserAdminResponseDTO::firstName)
+                .containsExactlyInAnyOrder("Active One", "Active Two")
+                .doesNotContain("Deleted One");
+    }
+
+    @Test
+    @DisplayName("getAllUser returns ONLY DELETED users when isDeleted == true")
+    void getAllUser_shouldReturnOnlyDeletedUsers_whenIsDeletedIsTrue() {
+
+        createTestUser("Active User", false);
+        createTestUser("Deleted User 1", true);
+        createTestUser("Deleted User 2", true);
+
+        Page<UserAdminResponseDTO> result = userService.getAllUser(null, true, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent())
+                .extracting(UserAdminResponseDTO::firstName)
+                .containsExactlyInAnyOrder("Deleted User 1", "Deleted User 2");
+    }
+
+    @Test
+    @DisplayName("getAllUser correctly handles pagination")
+    void getAllUser_shouldRespectPagination() {
+
+        for (int i = 1; i <= 5; i++) {
+            createTestUser("User " + i, false);
+        }
+
+        Page<UserAdminResponseDTO> page1 = userService.getAllUser(null, false, PageRequest.of(0, 2));
+
+        assertThat(page1.getContent()).hasSize(2);
+        assertThat(page1.getTotalElements()).isEqualTo(5);
+        assertThat(page1.getTotalPages()).isEqualTo(3);
+    }
 
     private void createTestUser(String firstName, boolean isDeleted) {
         User user = new User();
@@ -803,7 +668,7 @@ public class UserServiceImplTest extends BaseIntegrationTest {
         user.setFirstName(firstName);
         user.setSecondName("Test");
         user.setEmail(firstName.replace(" ", "") + UUID.randomUUID() + "@test.com");
-        user.setPhoneNumber("+380" + UUID.randomUUID().toString().hashCode());
+        user.setPhoneNumber("+380" + Math.abs(UUID.randomUUID().toString().hashCode()));
         user.setPassword("pass");
         user.setRoleType(RoleType.CUSTOMER);
         user.setDeleted(isDeleted);

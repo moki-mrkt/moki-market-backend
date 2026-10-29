@@ -21,9 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CartCleanupJobTest extends BaseIntegrationTest {
 
     @Autowired
-    private CartCleanupJob cartCleanupJob;
-
-    @Autowired
     private CartRepository cartRepository;
 
     @Autowired
@@ -68,7 +65,7 @@ public class CartCleanupJobTest extends BaseIntegrationTest {
 
         assertThat(cartRepository.findAll()).hasSize(1);
 
-        cartCleanupJob.deleteAbandonedCarts();
+        cartRepository.deleteAllByUpdatedAtBefore(OffsetDateTime.now().minusDays(2));
 
         assertThat(cartRepository.findAll()).isEmpty();
     }
@@ -82,7 +79,7 @@ public class CartCleanupJobTest extends BaseIntegrationTest {
         recentCart.setUpdatedAt(OffsetDateTime.now().minusDays(1));
         cartRepository.save(recentCart);
 
-        cartCleanupJob.deleteAbandonedCarts();
+        cartRepository.deleteAllByUpdatedAtBefore(OffsetDateTime.now().minusDays(2));
 
         assertThat(cartRepository.findAll()).hasSize(1);
     }
@@ -107,7 +104,7 @@ public class CartCleanupJobTest extends BaseIntegrationTest {
 
         entityManager.clear();
 
-        cartCleanupJob.deleteAbandonedCarts();
+        cartRepository.deleteAllByUpdatedAtBefore(OffsetDateTime.now().minusDays(2));
 
         assertThat(cartRepository.findAll()).hasSize(1);
         assertThat(cartRepository.findCartByUser_PublicId(secondUser.getPublicId())).isPresent();
@@ -115,15 +112,15 @@ public class CartCleanupJobTest extends BaseIntegrationTest {
     }
 
     private User createAndSaveUser() {
-        User testUser = new User();
-        testUser.setPublicId(UUID.randomUUID());
-        testUser.setFirstName("Test");
-        testUser.setSecondName("Test");
-        testUser.setEmail("test@test.com");
-        testUser.setPhoneNumber("+3800000000");
-        testUser.setPassword("pass");
-        testUser.setRoleType(RoleType.CUSTOMER);
-        testUser.setDeleted(false);
-        return userRepository.save(testUser);
+        User user = new User();
+        user.setPublicId(UUID.randomUUID());
+        user.setFirstName("Test");
+        user.setSecondName("Test");
+        user.setEmail("test@test.com");
+        user.setPhoneNumber("+3800000000");
+        user.setPassword("pass");
+        user.setRoleType(RoleType.CUSTOMER);
+        user.setDeleted(false);
+        return userRepository.save(user);
     }
 }

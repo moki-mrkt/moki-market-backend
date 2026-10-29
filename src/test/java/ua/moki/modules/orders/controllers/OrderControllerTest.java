@@ -135,7 +135,6 @@ public class OrderControllerTest {
 
     @Test
     @DisplayName("PATCH /orders/{id} updates an order and returns 200 OK")
-    @WithMockUser // Імітуємо автентифікованого користувача
     void updateOrder_shouldReturnOk() throws Exception {
 
         UUID orderId = UUID.randomUUID();
@@ -145,12 +144,27 @@ public class OrderControllerTest {
         when(orderService.updateOrder(any(UUID.class), any(OrderUpdateDTO.class))).thenReturn(responseDTO);
 
         mockMvc.perform(patch("/orders/{id}", orderId)
-                        .with(user("user").roles("CUSTOMER"))
+                        .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(orderId.toString()))
                 .andExpect(jsonPath("$.email").value(responseDTO.email()));
+    }
+
+    @Test
+    @DisplayName("PATCH /orders/{id} returns 403 Forbidden for CUSTOMER role")
+    void updateOrder_shouldReturnForbidden_whenCustomer() throws Exception {
+        UUID orderId = UUID.randomUUID();
+        OrderUpdateDTO updateDTO = createSampleUpdateDTO();
+
+        mockMvc.perform(patch("/orders/{id}", orderId)
+                        .with(user("user").roles("CUSTOMER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateDTO)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(orderService);
     }
 
     @Test
@@ -183,7 +197,7 @@ public class OrderControllerTest {
         );
 
         mockMvc.perform(patch("/orders/{id}", orderId)
-                        .with(user("user").roles("CUSTOMER"))
+                        .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -199,7 +213,7 @@ public class OrderControllerTest {
                 .thenThrow(new EntityNotFoundException("Order not found"));
 
         mockMvc.perform(patch("/orders/{id}", orderId)
-                        .with(user("user").roles("CUSTOMER"))
+                        .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isNotFound());
@@ -413,7 +427,7 @@ public class OrderControllerTest {
     }
 
     private OrderRequestDTO createSampleRequestDTO() {
-        CartItemDTO item = new CartItemDTO(1L, 2);
+        CartItemDTO item = new CartItemDTO(1L, 2, null);
         AddressDTO address = new AddressDTO("Kyiv", "Kyivskyi", "1", "Main st", "1","1");
 
         return new OrderRequestDTO(

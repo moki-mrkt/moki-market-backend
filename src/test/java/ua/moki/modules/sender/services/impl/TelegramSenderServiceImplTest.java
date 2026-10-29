@@ -85,7 +85,7 @@ class TelegramSenderServiceImplTest {
     }
 
     private OrderResponseDTO createSimpleOrder() {
-        OrderItemDTO item = new OrderItemDTO( 1L, "Laptop", new BigDecimal("25000"),  new BigDecimal("20000"), 1, new BigDecimal("25000"));
+        OrderItemDTO item = new OrderItemDTO(1L, "Laptop", new BigDecimal("25000"), new BigDecimal("20000"), 1, new BigDecimal("25000"), null);
         AddressDTO address = new AddressDTO("Kyiv", "Kyiv region", "1", "Main St", "10", "5");
         return new OrderResponseDTO(
                 UUID.randomUUID(), "NUM", OffsetDateTime.now(), OrderStatus.NEW, PaymentType.CARD, PaymentStatus.SUCCESS,

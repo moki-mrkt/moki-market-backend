@@ -1,6 +1,5 @@
 package ua.moki.modules.orders.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,10 +30,10 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,7 +74,7 @@ public class CartControllerTest {
     }
 
     @Test
-    @DisplayName("POST /carts/add should return 200 OK and cart data for authenticated user")
+    @DisplayName("POST /cart/items should return 200 OK and cart data for authenticated user")
     void addToCart_shouldReturnOk() throws Exception {
 
         UUID userId = UUID.randomUUID();
@@ -83,22 +82,22 @@ public class CartControllerTest {
         int quantity = 2;
         CartResponseDTO responseDTO = new CartResponseDTO(UUID.randomUUID(), BigDecimal.ONE, Collections.emptyList());
 
-        when(cartService.addToCart(eq(userId), eq(productId), eq(quantity))).thenReturn(responseDTO);
+        when(cartService.addToCart(eq(userId), eq(productId), eq(quantity), isNull())).thenReturn(responseDTO);
 
-        mockMvc.perform(post("/carts/add")
+        mockMvc.perform(post("/cart/items")
                         .with(user(userId.toString()).roles("CUSTOMER"))
                         .param("productId", productId.toString())
                         .param("quantity", String.valueOf(quantity)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cartId").exists());
 
-        verify(cartService).addToCart(userId, productId, quantity);
+        verify(cartService).addToCart(userId, productId, quantity, null);
     }
 
     @Test
-    @DisplayName("POST /carts/add should return 400 BadRequest when quantity < 1")
+    @DisplayName("POST /cart/items should return 400 BadRequest when quantity < 1")
     void addToCart_shouldReturnBadRequest_whenInvalidQuantity() throws Exception {
-        mockMvc.perform(post("/carts/add")
+        mockMvc.perform(post("/cart/items")
                         .with(user(UUID.randomUUID().toString()).roles("CUSTOMER"))
                         .param("productId", "1")
                         .param("quantity", "0"))
@@ -108,33 +107,73 @@ public class CartControllerTest {
     }
 
     @Test
-    @DisplayName("POST /carts/add should return 401 Unauthorized for anonymous user")
+    @DisplayName("POST /cart/items should return 401 Unauthorized for anonymous user")
     void addToCart_shouldReturnUnauthorized() throws Exception {
-        mockMvc.perform(post("/carts/add")
+        mockMvc.perform(post("/cart/items")
                         .param("productId", "1")
                         .param("quantity", "1"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("DELETE /carts/clear should return 204 No Content for authenticated user")
-    void clearCart_shouldReturnNoContent() throws Exception {
-
+    @DisplayName("PUT /cart/items/{productId} should update item quantity and return 200 OK")
+    void updateQuantity_shouldReturnOk() throws Exception {
         UUID userId = UUID.randomUUID();
+        Long productId = 5L;
+        int quantity = 3;
+        CartResponseDTO responseDTO = new CartResponseDTO(UUID.randomUUID(), BigDecimal.TEN, Collections.emptyList());
 
-        mockMvc.perform(delete("/carts/clear")
-                        .with(user(userId.toString()).roles("CUSTOMER")))
-                .andExpect(status().isNoContent());
+        when(cartService.updateItemQuantity(userId, productId, quantity)).thenReturn(responseDTO);
 
-        verify(cartService, times(1)).clearCart(any());
+        mockMvc.perform(put("/cart/items/{productId}", productId)
+                        .with(user(userId.toString()).roles("CUSTOMER"))
+                        .param("quantity", String.valueOf(quantity)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cartId").exists());
+
+        verify(cartService).updateItemQuantity(userId, productId, quantity);
     }
 
     @Test
-    @DisplayName("DELETE /carts/clear should return 401 Unauthorized for anonymous user")
-    void clearCart_shouldReturnUnauthorized() throws Exception {
-        mockMvc.perform(delete("/carts/clear"))
+    @DisplayName("DELETE /cart/items/{productId} should remove item from cart and return 200 OK")
+    void deleteItemFromCart_shouldReturnOk() throws Exception {
+
+        UUID userId = UUID.randomUUID();
+        Long productId = 10L;
+        CartResponseDTO responseDTO = new CartResponseDTO(UUID.randomUUID(), BigDecimal.ZERO, Collections.emptyList());
+
+        when(cartService.deleteItemFromCart(userId, productId)).thenReturn(responseDTO);
+
+        mockMvc.perform(delete("/cart/items/{productId}", productId)
+                        .with(user(userId.toString()).roles("CUSTOMER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cartId").exists());
+
+        verify(cartService, times(1)).deleteItemFromCart(userId, productId);
+    }
+
+    @Test
+    @DisplayName("DELETE /cart/items/{productId} should return 401 Unauthorized for anonymous user")
+    void deleteItemFromCart_shouldReturnUnauthorized() throws Exception {
+        mockMvc.perform(delete("/cart/items/{productId}", 10L))
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(cartService);
+    }
+
+    @Test
+    @DisplayName("GET /cart should return current user's cart")
+    void getCart_shouldReturnOk() throws Exception {
+        UUID userId = UUID.randomUUID();
+        CartResponseDTO responseDTO = new CartResponseDTO(UUID.randomUUID(), BigDecimal.ZERO, Collections.emptyList());
+
+        when(cartService.getCart(userId)).thenReturn(responseDTO);
+
+        mockMvc.perform(get("/cart")
+                        .with(user(userId.toString()).roles("CUSTOMER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cartId").exists());
+
+        verify(cartService).getCart(userId);
     }
 }

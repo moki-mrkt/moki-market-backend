@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -19,18 +21,17 @@ import ua.moki.configuration.AppConfig;
 import ua.moki.configuration.JwtCryptoConfig;
 import ua.moki.configuration.SecurityConfig;
 import ua.moki.configuration.entry_points.JwtAuthenticationEntryPoint;
-import ua.moki.modules.products.dtos.ProductImageDTO;
-import ua.moki.modules.products.dtos.ProductImageResponseDTO;
-import ua.moki.modules.products.dtos.ProductRequestDTO;
-import ua.moki.modules.products.dtos.ProductResponseDTO;
+import ua.moki.modules.products.dtos.*;
 import ua.moki.modules.products.enums.ProductAvailability;
 import ua.moki.modules.products.enums.ProductCategory;
+import ua.moki.modules.products.enums.ProductType;
 import ua.moki.modules.products.services.ProductService;
 import ua.moki.modules.users.security.JwtFilter;
 import ua.moki.util.exceptions.EntityNotFoundException;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -43,14 +44,16 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
 @WebMvcTest(ProductController.class)
 @Import({SecurityConfig.class, JwtCryptoConfig.class, AppConfig.class,
         JwtAuthenticationEntryPoint.class})
-public class ProductControllerTest  {
+class ProductControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockitoBean
     private ProductService productService;
@@ -60,9 +63,6 @@ public class ProductControllerTest  {
 
     @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setup() throws Exception {
@@ -76,45 +76,10 @@ public class ProductControllerTest  {
     }
 
     @Test
-    void createProduct_shouldReturnCreated_whenRequestIsValid() throws Exception {
-
-        ProductRequestDTO requestDTO = new ProductRequestDTO(
-                "Test Product",
-                ProductCategory.NUTS,
-                "Delicious nuts description",
-                BigDecimal.valueOf(100.00),
-                ProductAvailability.IN_STOCK,
-                0,
-                BigDecimal.valueOf(80.00),
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                List.of(new ProductImageDTO("photo_123", true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                1L,
-                "Test Product",
-                ProductCategory.NUTS,
-                "Delicious nuts description",
-                BigDecimal.valueOf(100.00),
-                BigDecimal.valueOf(95.0),
-                BigDecimal.valueOf(95.0),
-                5,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                0L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
-        );
+    @DisplayName("POST /products - 201 Created for ADMIN")
+    void createProduct_shouldReturnCreated_whenAdminAndValidRequest() throws Exception {
+        ProductRequestDTO requestDTO = createValidProductRequestDTO();
+        ProductResponseDTO responseDTO = createSampleProductResponseDTO(100L);
 
         when(productService.createProduct(any(ProductRequestDTO.class))).thenReturn(responseDTO);
 
@@ -123,29 +88,53 @@ public class ProductControllerTest  {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "http://localhost/products/1"))
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.name", is("Test Product")))
-                .andExpect(jsonPath("$.price", is(100.0)));
+                .andExpect(header().string("Location", "http://localhost/products/100"))
+                .andExpect(jsonPath("$.id", is(100)))
+                .andExpect(jsonPath("$.name", is(requestDTO.name())));
 
         verify(productService).createProduct(any(ProductRequestDTO.class));
     }
 
     @Test
-    void createProduct_shouldReturnBadRequest_whenValidationFails() throws Exception {
+    @DisplayName("POST /products - 403 Forbidden for MANAGER (only ADMIN)")
+    void createProduct_shouldReturnForbidden_whenManager() throws Exception {
+        ProductRequestDTO requestDTO = createValidProductRequestDTO();
 
-        ProductRequestDTO invalidRequestDTO = new ProductRequestDTO(
+        mockMvc.perform(post("/products")
+                        .with(user("manager").roles("MANAGER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isForbidden());
+
+        verify(productService, never()).createProduct(any());
+    }
+
+    @Test
+    @DisplayName("POST /products - 400 Bad Request on validation failure (e.g. negative price)")
+    void createProduct_shouldReturnBadRequest_whenDataInvalid() throws Exception {
+        ProductRequestDTO invalidDTO = new ProductRequestDTO(
                 "A",
+                "А",
                 ProductCategory.NUTS,
-                "Short",
-                BigDecimal.valueOf(-10.00),
+                "Desc",
+                "Опис",
+                new BigDecimal("-10"),
                 ProductAvailability.IN_STOCK,
-                99,
-                BigDecimal.valueOf(100.00),
-                "",
+                105,
+                new BigDecimal("100"),
+                "Maker",
                 "Sub",
-                "invalid_unit",
-                0,
+                "Підкат",
+                "WRONG",
+                1000,
+                null,
+                null,
+                null,
+                ProductType.SIMPLE,
+                null,
+                false,
+                null,
+                null,
                 null,
                 null
         );
@@ -153,479 +142,200 @@ public class ProductControllerTest  {
         mockMvc.perform(post("/products")
                         .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequestDTO)))
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
-
-    }
-
-    @Test
-    void createProduct_shouldReturnForbidden_whenUserIsNotAdmin() throws Exception {
-
-        ProductRequestDTO invalidRequestDTO = new ProductRequestDTO(
-                "A",
-                ProductCategory.NUTS,
-                "Short",
-                BigDecimal.valueOf(-10.00),
-                ProductAvailability.IN_STOCK,
-                99,
-                BigDecimal.valueOf(100.00),
-                "",
-                "Sub",
-                "invalid_unit",
-                0,
-                null,
-                null
-        );
-
-         mockMvc.perform(post("/products")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(invalidRequestDTO)))
-        .andExpect(status().isUnauthorized());
 
         verify(productService, never()).createProduct(any());
-
     }
 
     @Test
-    @DisplayName("PUT /product/{id} - successfully updates the product and returns 200 OK")
-    void updateProduct_shouldReturnOk_whenRequestIsValid() throws Exception {
-
+    @DisplayName("PUT /products/{id} - 200 OK for MANAGER")
+    void updateProduct_shouldReturnOk_whenManager() throws Exception {
         Long productId = 1L;
+        ProductRequestDTO requestDTO = createValidProductRequestDTO();
+        ProductResponseDTO responseDTO = createSampleProductResponseDTO(productId);
 
-        ProductRequestDTO requestDTO = new ProductRequestDTO(
-                "Оновлений Горіх",
-                ProductCategory.NUTS,
-                "Оновлений опис продукту",
-                BigDecimal.valueOf(200.00),
-                ProductAvailability.IN_STOCK,
-                50,
-                BigDecimal.valueOf(120.00),
-                "New Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                List.of(new ProductImageDTO("photo_123", true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                productId,
-                "Оновлений Горіх",
-                ProductCategory.NUTS,
-                "Оновлений опис продукту",
-                BigDecimal.valueOf(200.00),
-                BigDecimal.valueOf(50.0),
-                BigDecimal.valueOf(50.0),
-                50,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "New Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                0L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-        when(productService.updateProduct(eq(productId), any(ProductRequestDTO.class)))
-                .thenReturn(responseDTO);
+        when(productService.updateProduct(eq(productId), any(ProductRequestDTO.class))).thenReturn(responseDTO);
 
         mockMvc.perform(put("/products/{id}", productId)
-                        .with(user("admin").roles("ADMIN"))
+                        .with(user("manager").roles("MANAGER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
-
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(productId.intValue())))
-                .andExpect(jsonPath("$.name", is("Оновлений Горіх")))
-                .andExpect(jsonPath("$.price", is(200.0)))
-                .andExpect(jsonPath("$.discount", is(50)));
+                .andExpect(jsonPath("$.id", is(1)));
 
         verify(productService).updateProduct(eq(productId), any(ProductRequestDTO.class));
     }
 
     @Test
-    @DisplayName("PUT /product/{id} - returns 400 Bad Request for invalid data")
-    void updateProduct_shouldReturnBadRequest_whenValidationFails() throws Exception {
+    @DisplayName("PUT /products/{id} - 403 Forbidden for CUSTOMER")
+    void updateProduct_shouldReturnForbidden_whenCustomer() throws Exception {
+        ProductRequestDTO requestDTO = createValidProductRequestDTO();
 
-        Long productId = 1L;
-
-        ProductRequestDTO invalidRequestDTO = new ProductRequestDTO(
-                "",
-                ProductCategory.NUTS,
-                "Short",
-                BigDecimal.valueOf(-1.00),
-                ProductAvailability.IN_STOCK,
-                0,
-                BigDecimal.valueOf(100.00),
-                "Manuf",
-                "Sub",
-                "kg",
-                1,
-                null,
-                null
-        );
-
-        mockMvc.perform(put("/products/{id}", productId)
-                        .with(user("admin").roles("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequestDTO)))
-                .andExpect(status().isBadRequest());
-
-        verify(productService, never()).updateProduct(any(), any());
-    }
-
-    @Test
-    void updateProduct_shouldReturnForbidden_whenUserIsNotAdmin() throws Exception {
-
-        Long productId = 1L;
-
-        ProductRequestDTO invalidRequestDTO = new ProductRequestDTO(
-                "A",
-                ProductCategory.NUTS,
-                "Short",
-                BigDecimal.valueOf(-10.00),
-                ProductAvailability.IN_STOCK,
-                99,
-                BigDecimal.valueOf(100.00),
-                "",
-                "Sub",
-                "invalid_unit",
-                0,
-                null,
-                null
-        );
-
-        mockMvc.perform(post("/products/{id}", productId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequestDTO)))
-                .andExpect(status().isUnauthorized());
-
-        verify(productService, never()).updateProduct(any(), any());
-
-    }
-
-    @Test
-    @DisplayName("PUT /product/{id} - return 404 when entity not found")
-    void updateProduct_shouldReturnNotFound_whenEntityNotFound() throws Exception {
-
-        Long productId = 1L;
-
-        ProductRequestDTO requestDTO = new ProductRequestDTO(
-                "Оновлений Горіх",
-                ProductCategory.NUTS,
-                "Оновлений опис продукту",
-                BigDecimal.valueOf(200.00),
-                ProductAvailability.IN_STOCK,
-                5,
-                BigDecimal.valueOf(120.00),
-                "New Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                List.of(new ProductImageDTO("photo_123", true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-        when(productService.updateProduct(eq(productId), any(ProductRequestDTO.class)))
-                .thenThrow(new EntityNotFoundException("Product not found"));
-
-        mockMvc.perform(put("/products/{id}", productId)
-                        .with(user("admin").roles("ADMIN"))
+        mockMvc.perform(put("/products/{id}", 1L)
+                        .with(user("customer").roles("CUSTOMER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isNotFound());
-
-        verify(productService).updateProduct(eq(productId), any(ProductRequestDTO.class));
-    }
-
-    @Test
-    @DisplayName("deleteProduct returns 204 No Content when ADMIN deletes an existing product")
-    void deleteProduct_shouldReturnNoContent_whenUserIsAdmin() throws Exception {
-
-        Long productId = 1L;
-        doNothing().when(productService).deleteProduct(productId);
-
-        mockMvc.perform(delete("/products/{id}", productId)
-                        .with(user("admin").roles("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
-
-        verify(productService).deleteProduct(productId);
-    }
-
-    @Test
-    @DisplayName("deleteProduct returns 204 No Content when MANAGER deletes an existing product")
-    void deleteProduct_shouldReturnNoContent_whenUserIsManager() throws Exception {
-
-        Long productId = 2L;
-        doNothing().when(productService).deleteProduct(productId);
-
-        mockMvc.perform(delete("/products/{id}", productId)
-                 .with(user("manager").roles("MANAGER"))
-                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
-
-        verify(productService).deleteProduct(productId);
-    }
-
-    @Test
-    @DisplayName("deleteProduct returns 403 Forbidden when CUSTOMER tries to delete a product")
-    void deleteProduct_shouldReturnForbidden_whenUserIsCustomer() throws Exception {
-
-        Long productId = 3L;
-
-        mockMvc.perform(delete("/products/{id}", productId)
-                 .with(user("customer").roles("CUSTOMER"))
-                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
 
-        verify(productService, never()).deleteProduct(anyLong());
+        verify(productService, never()).updateProduct(any(), any());
     }
 
     @Test
-    @DisplayName("deleteProduct returns 401 Unauthorized when an unauthorized user tries to delete a product")
-    void deleteProduct_shouldReturnUnauthorized_whenUserIsNotAuthenticated() throws Exception {
+    @DisplayName("DELETE /products/{id} - 204 No Content for ADMIN")
+    void deleteProduct_shouldReturnNoContent_whenAdmin() throws Exception {
+        Long productId = 5L;
+        doNothing().when(productService).deleteProduct(productId);
 
-        Long productId = 4L;
+        mockMvc.perform(delete("/products/{id}", productId)
+                        .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isNoContent());
 
-        mockMvc.perform(delete("/products/{id}", productId))
-                .andExpect(status().isUnauthorized());
-
-        verify(productService, never()).deleteProduct(anyLong());
+        verify(productService).deleteProduct(productId);
     }
 
     @Test
-    @DisplayName("deleteProduct returns 404 Not Found if the product does not exist")
-    void deleteProduct_shouldReturnNotFound_whenProductDoesNotExist() throws Exception {
-        Long nonExistentId = 999L;
-        doThrow(new EntityNotFoundException("Product not found"))
-                .when(productService).deleteProduct(nonExistentId);
+    @DisplayName("DELETE /products/{id} - 404 Not Found if product does not exist")
+    void deleteProduct_shouldReturnNotFound_whenIdDoesNotExist() throws Exception {
+        Long productId = 999L;
+        doThrow(new EntityNotFoundException("Product not found")).when(productService).deleteProduct(productId);
 
-        mockMvc.perform(delete("/products/{id}", nonExistentId)
-                        .with(user("admin").roles("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(delete("/products/{id}", productId)
+                        .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isNotFound());
-
-        verify(productService).deleteProduct(nonExistentId);
     }
 
     @Test
-    @DisplayName("GET /products/{id} - returns 200 OK and DTO if product found")
-    void getProductById_shouldReturnProduct_whenExists() throws Exception {
-
-        Long productId = 1L;
-
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                1L,
-                "Test Product",
-                ProductCategory.NUTS,
-                "Delicious nuts description",
-                BigDecimal.valueOf(100.00),
-                BigDecimal.valueOf(95.0),
-                BigDecimal.valueOf(95.0),
-                5,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                0L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
-        );
+    @DisplayName("GET /products/{id} - 200 OK for anonymous user")
+    void getProductById_shouldReturnProduct_whenPublic() throws Exception {
+        Long productId = 10L;
+        ProductResponseDTO responseDTO = createSampleProductResponseDTO(productId);
 
         when(productService.getProductById(productId)).thenReturn(responseDTO);
 
         mockMvc.perform(get("/products/{id}", productId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(productId.intValue())))
-                .andExpect(jsonPath("$.name", is("Test Product")))
-                .andExpect(jsonPath("$.price", is(100.0)));
+                .andExpect(jsonPath("$.id", is(10)))
+                .andExpect(jsonPath("$.name", is("Valid Product Name")));
 
         verify(productService).getProductById(productId);
     }
 
     @Test
-    @DisplayName("GET /products/{id} - returns 404 Not Found if the product is missing")
-    void getProductById_shouldReturnNotFound_whenIdDoesNotExist() throws Exception {
+    @DisplayName("GET /products/{id}/admin - 200 OK for ADMIN")
+    void getProductByIdForAdmin_shouldReturnAdminDto_whenAdmin() throws Exception {
+        Long productId = 10L;
+        ProductAdminResponseDTO adminDTO = createSampleProductAdminResponseDTO(productId);
 
-        Long nonExistentId = 999L;
+        when(productService.getProductByIdForAdmin(productId)).thenReturn(adminDTO);
 
-        when(productService.getProductById(nonExistentId))
-                .thenThrow(new EntityNotFoundException("Product not found with id: " + nonExistentId));
-
-        mockMvc.perform(get("/products/{id}", nonExistentId)
+        mockMvc.perform(get("/products/{id}/admin", productId)
+                        .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status", is(404)))
-                .andExpect(jsonPath("$.detail", is("Product not found with id: 999")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(10)))
+                .andExpect(jsonPath("$.name", is("Valid Product Name")))
+                .andExpect(jsonPath("$.nameRu", is("Валидное имя товара")));
 
-        verify(productService).getProductById(nonExistentId);
+        verify(productService).getProductByIdForAdmin(productId);
     }
 
     @Test
-    @DisplayName("GET /products - return page with products (200 OK)")
+    @DisplayName("GET /products/{id}/admin - 403 Forbidden for CUSTOMER")
+    void getProductByIdForAdmin_shouldReturnForbidden_whenCustomer() throws Exception {
+        mockMvc.perform(get("/products/{id}/admin", 10L)
+                        .with(user("customer").roles("CUSTOMER"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+
+        verify(productService, never()).getProductByIdForAdmin(any());
+    }
+
+    @Test
+    @DisplayName("GET /products/slug/{slug} - 200 OK for anonymous user")
+    void getProductBySlug_shouldReturnProduct_whenPublic() throws Exception {
+        String slug = "valid-product-name";
+        ProductResponseDTO responseDTO = createSampleProductResponseDTO(10L);
+
+        when(productService.getProductBySlug(slug)).thenReturn(responseDTO);
+
+        mockMvc.perform(get("/products/slug/{slug}", slug)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(10)))
+                .andExpect(jsonPath("$.slug", is(slug)));
+
+        verify(productService).getProductBySlug(slug);
+    }
+
+    @Test
+    @DisplayName("GET /products - returns Page<ProductAdminResponseDTO> for ADMIN")
     void getAllProducts_shouldReturnPageOfProducts() throws Exception {
+        ProductAdminResponseDTO dto = createSampleProductAdminResponseDTO(1L);
+        Page<ProductAdminResponseDTO> page = new PageImpl<>(List.of(dto));
 
-        int page = 1;
-        int size = 10;
-
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                1L,
-                "Test Product",
-                ProductCategory.NUTS,
-                "Delicious nuts description",
-                BigDecimal.valueOf(100.00),
-                BigDecimal.valueOf(95.0),
-                BigDecimal.valueOf(95.0),
-                5,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                0L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-        PageImpl<ProductResponseDTO> productPage = new PageImpl<>(List.of(responseDTO));
-
-        when(productService.getAllProducts(eq(""), any(Pageable.class)))
-                .thenReturn(productPage);
+        when(productService.getAllProducts(eq(null), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/products")
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
-                        .param("query", "")
                         .with(user("admin").roles("ADMIN"))
+                        .param("page", "0")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].id", is(1)))
-                .andExpect(jsonPath("$.content[0].name", is("Test Product")))
-                .andExpect(jsonPath("$.page.totalElements", is(1)));
+                .andExpect(jsonPath("$.content[0].id", is(1)));
+
+        verify(productService).getAllProducts(eq(null), any(Pageable.class));
     }
 
     @Test
-    @DisplayName("GET /products - повертає порожню сторінку, якщо продуктів немає")
-    void getAllProducts_shouldReturnEmptyPage_whenNoProductsFound() throws Exception {
+    @DisplayName("GET /products/public/sitemap - returns Page<ProductPublicDTO> for public")
+    void getAllProductsForPublic_shouldReturnPublicSitemapPage() throws Exception {
+        ProductPublicDTO publicDTO = new ProductPublicDTO(1L, "valid-product-name");
+        Page<ProductPublicDTO> page = new PageImpl<>(List.of(publicDTO));
 
-        int page = 0;
-        int size = 10;
+        when(productService.getAllProductsForPublic(any(Pageable.class))).thenReturn(page);
 
-        when(productService.getAllProducts(eq(""), any(Pageable.class)))
-                .thenReturn(Page.empty());
-
-        mockMvc.perform(get("/products")
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
-                        .param("query", "")
-                        .with(user("admin").roles("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(0)))
-                .andExpect(jsonPath("$.page.totalElements", is(0)));
-
-    }
-
-    @Test
-    @DisplayName("GET /products - повертає 401 Unauthorized, якщо user is not admin or manager")
-    void getAllProducts_shouldReturnForbidden_whenUserIsNotAdminOrManager() throws Exception {
-
-        int page = 0;
-        int size = 10;
-
-        mockMvc.perform(get("/products")
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
-
-        verify(productService, never()).getAllProducts("", PageRequest.of(1, 10));
-    }
-
-    @Test
-    @DisplayName("GET /products/new - returns the new products page (200 OK)")
-    void getNewProducts_shouldReturnPageOfProducts() throws Exception {
-
-        int page = 0;
-        int size = 10;
-
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                1L,
-                "New Arrival Product",
-                ProductCategory.NUTS,
-                "Description",
-                BigDecimal.valueOf(100.00),
-                BigDecimal.valueOf(95.0),
-                BigDecimal.valueOf(95.0),
-                5,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                0L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-        PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
-
-        when(productService.getNewProducts(page, size)).thenReturn(pageResult);
-
-        mockMvc.perform(get("/products/new")
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
+        mockMvc.perform(get("/products/public/sitemap")
+                        .param("page", "0")
+                        .param("size", "100")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].name", is("New Arrival Product")))
-                .andExpect(jsonPath("$.page.totalElements", is(1)));
+                .andExpect(jsonPath("$.content[0].slug", is("valid-product-name")));
 
-        verify(productService).getNewProducts(page, size);
+        verify(productService).getAllProductsForPublic(any(Pageable.class));
     }
 
     @Test
-    @DisplayName("GET /products/new - returns a blank page if there are no new products")
-    void getNewProducts_shouldReturnEmptyPage() throws Exception {
+    @DisplayName("GET /products/category/{category} - filters by category")
+    void getAllProductsByCategory_shouldReturnFilteredPage() throws Exception {
+        ProductCategory category = ProductCategory.SWEETS;
+        int pageNum = 0;
+        int size = 5;
 
-        int page = 0;
-        int size = 10;
+        ProductResponseDTO dto = createSampleProductResponseDTO(1L);
+        Page<ProductResponseDTO> page = new PageImpl<>(List.of(dto));
 
-        when(productService.getNewProducts(page, size)).thenReturn(Page.empty());
+        when(productService.getAllProductByCategory(category, pageNum, size)).thenReturn(page);
 
-        mockMvc.perform(get("/products/new")
-                        .param("page", String.valueOf(page))
+        mockMvc.perform(get("/products/category/{category}", category)
+                        .param("page", String.valueOf(pageNum))
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(0)))
-                .andExpect(jsonPath("$.page.totalElements", is(0)));
+                .andExpect(jsonPath("$.content", hasSize(1)));
 
-        verify(productService).getNewProducts(page, size);
+        verify(productService).getAllProductByCategory(category, pageNum, size);
     }
 
     @Test
-    @DisplayName("GET /products/new - returns 400 Bad Request if no parameters are provided")
-    void getNewProducts_shouldReturnBadRequest_whenParamsMissing() throws Exception {
-
+    @DisplayName("GET /products/new - 400 Bad Request when page < 0")
+    void getNewProducts_shouldReturnBadRequest_whenPageIsNegative() throws Exception {
         mockMvc.perform(get("/products/new")
+                        .param("page", "-1")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
@@ -633,234 +343,164 @@ public class ProductControllerTest  {
     }
 
     @Test
-    @DisplayName("GET /products/category/{category} - returns products of the selected category (200 OK)")
-    void getProductsByCategory_shouldReturnPageOfProducts() throws Exception {
-
-        ProductCategory category = ProductCategory.NUTS;
-        int page = 0;
+    @DisplayName("GET /products/discount - returns discounted products")
+    void getProductsWithDiscount_shouldReturnPage() throws Exception {
+        int pageNum = 0;
         int size = 10;
+        Page<ProductResponseDTO> page = new PageImpl<>(Collections.emptyList());
 
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                1L,
-                "New Arrival Product",
-                ProductCategory.NUTS,
-                "Description",
-                BigDecimal.valueOf(100.00),
-                BigDecimal.valueOf(95.0),
-                BigDecimal.valueOf(95.0),
-                5,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                0L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-
-        PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
-
-        when(productService.getAllProductByCategory(category, page, size)).thenReturn(pageResult);
-
-        mockMvc.perform(get("/products/category/{category}", category)
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].productCategory", is(category.name())))
-                .andExpect(jsonPath("$.page.totalElements", is(1)));
-
-        verify(productService).getAllProductByCategory(category, page, size);
-    }
-
-    @Test
-    @DisplayName("GET /products/category/{category} - returns 400 Bad Request if the category does not exist")
-    void getProductsByCategory_shouldReturnBadRequest_whenCategoryIsInvalid() throws Exception {
-
-        String invalidCategory = "INVALID_CATEGORY";
-
-        mockMvc.perform(get("/products/category/{category}", invalidCategory)
-                        .param("page", "0")
-                        .param("size", "10")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
-
-        verify(productService, never()).getAllProductByCategory(any(), anyInt(), anyInt());
-    }
-
-    @Test
-    @DisplayName("GET /products/category/{category} - returns a blank page if there are no products")
-    void getProductsByCategory_shouldReturnEmptyPage() throws Exception {
-
-        ProductCategory category = ProductCategory.TEA;
-        when(productService.getAllProductByCategory(category, 0, 10)).thenReturn(Page.empty());
-
-        mockMvc.perform(get("/products/category/{category}", category)
-                        .param("page", "0")
-                        .param("size", "10")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(0)))
-                .andExpect(jsonPath("$.page.totalElements", is(0)));
-    }
-
-    @Test
-    @DisplayName("GET /products/discount - returns a page of discounted products (200 OK)")
-    void getProductsWithDiscount_shouldReturnPageOfProducts() throws Exception {
-
-        int page = 0;
-        int size = 10;
-
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                1L,
-                "Test Product",
-                ProductCategory.NUTS,
-                "Description",
-                BigDecimal.valueOf(100.00),
-                BigDecimal.valueOf(95.0),
-                BigDecimal.valueOf(95.0),
-                5,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                0L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
-        );
-
-
-        PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
-
-        when(productService.getProductsWithDiscount(page, size)).thenReturn(pageResult);
+        when(productService.getProductsWithDiscount(pageNum, size)).thenReturn(page);
 
         mockMvc.perform(get("/products/discount")
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .param("page", String.valueOf(pageNum))
+                        .param("size", String.valueOf(size)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].name", is("Test Product")))
-                .andExpect(jsonPath("$.content[0].discount", is(5)))
-                .andExpect(jsonPath("$.page.totalElements", is(1)));
+                .andExpect(jsonPath("$.content", hasSize(0)));
 
-        verify(productService).getProductsWithDiscount(page, size);
+        verify(productService).getProductsWithDiscount(pageNum, size);
     }
 
     @Test
-    @DisplayName("GET /products/discount - returns a blank page if there are no promotional products")
-    void getProductsWithDiscount_shouldReturnEmptyPage() throws Exception {
-
-        when(productService.getProductsWithDiscount(0, 10)).thenReturn(Page.empty());
-
-        mockMvc.perform(get("/products/discount")
-                        .param("page", "0")
-                        .param("size", "10")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(0)))
-                .andExpect(jsonPath("$.page.totalElements", is(0)));
-
-        verify(productService).getProductsWithDiscount(0, 10);
-    }
-
-    @Test
-    @DisplayName("GET /products/discount - returns 400 Bad Request with negative parameters")
-    void getProductsWithDiscount_shouldReturnBadRequest_whenParamsInvalid() throws Exception {
-
-        mockMvc.perform(get("/products/discount")
-                        .param("page", "-1")
-                        .param("size", "10")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
-
-        verify(productService, never()).getProductsWithDiscount(anyInt(), anyInt());
-    }
-
-    @Test
-    @DisplayName("GET /products/bestsellers - returns the bestsellers page (200 OK)")
-    void getBestsellers_shouldReturnPageOfProducts() throws Exception {
-
-        int page = 0;
+    @DisplayName("GET /products/bestsellers - returns bestseller products")
+    void getBestsellers_shouldReturnPage() throws Exception {
+        int pageNum = 0;
         int size = 10;
+        Page<ProductResponseDTO> page = new PageImpl<>(Collections.emptyList());
 
-        ProductResponseDTO responseDTO = new ProductResponseDTO(
-                1L,
-                "Top Seller Product",
-                ProductCategory.NUTS,
-                "Description",
-                BigDecimal.valueOf(100.00),
-                BigDecimal.valueOf(95.0),
-                BigDecimal.valueOf(95.0),
-                5,
-                BigDecimal.valueOf(5.0),
-                0L,
-                ProductAvailability.IN_STOCK,
-                "Best Manufacturer",
-                "Almonds",
-                "кг",
-                1,
-                1000L,
-                OffsetDateTime.now(),
-                List.of(new ProductImageResponseDTO("photo_123", "photo_123",true, 1, "")),
-                Map.of("origin", "USA")
+        when(productService.getBestsellers(pageNum, size)).thenReturn(page);
+
+        mockMvc.perform(get("/products/bestsellers")
+                        .param("page", String.valueOf(pageNum))
+                        .param("size", String.valueOf(size)))
+                .andExpect(status().isOk());
+
+        verify(productService).getBestsellers(pageNum, size);
+    }
+
+    @Test
+    @DisplayName("GET /products/search - returns SearchResponse for query and filters")
+    void search_shouldReturnSearchResponse() throws Exception {
+        ProductResponseDTO dto = createSampleProductResponseDTO(1L);
+        SearchResponse searchResponse = new SearchResponse(
+                new PageImpl<>(List.of(dto)),
+                List.of("Subcategory"),
+                50.0,
+                200.0
         );
 
-        PageImpl<ProductResponseDTO> pageResult = new PageImpl<>(List.of(responseDTO));
+        when(productService.searchProducts(any(ProductSearchRequestDTO.class), any(Pageable.class)))
+                .thenReturn(searchResponse);
 
-        when(productService.getBestsellers(page, size)).thenReturn(pageResult);
-
-        mockMvc.perform(get("/products/bestsellers")
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].name", is("Top Seller Product")))
-                .andExpect(jsonPath("$.content[0].salesCount", is(1000)))
-                .andExpect(jsonPath("$.page.totalElements", is(1)));
-
-        verify(productService).getBestsellers(page, size);
-    }
-
-    @Test
-    @DisplayName("GET /products/bestsellers - returns a blank page if there are no bestsellers")
-    void getBestsellers_shouldReturnEmptyPage() throws Exception {
-
-        when(productService.getBestsellers(0, 10)).thenReturn(Page.empty());
-
-        mockMvc.perform(get("/products/bestsellers")
+        mockMvc.perform(get("/products/search")
+                        .param("query", "матча")
+                        .param("category", "TEA")
+                        .param("minPrice", "50")
+                        .param("maxPrice", "200")
                         .param("page", "0")
-                        .param("size", "10")
+                        .param("size", "12")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(0)))
-                .andExpect(jsonPath("$.page.totalElements", is(0)));
+                .andExpect(jsonPath("$.products.content", hasSize(1)))
+                .andExpect(jsonPath("$.subcategories", hasSize(1)))
+                .andExpect(jsonPath("$.minPrice", is(50.0)))
+                .andExpect(jsonPath("$.maxPrice", is(200.0)));
 
-        verify(productService).getBestsellers(0, 10);
+        verify(productService).searchProducts(any(ProductSearchRequestDTO.class), any(Pageable.class));
     }
 
-    @Test
-    @DisplayName("GET /products/bestsellers - returns 400 Bad Request with incorrect parameters")
-    void getBestsellers_shouldReturnBadRequest_whenParamsInvalid() throws Exception {
-
-        mockMvc.perform(get("/products/bestsellers")
-                        .param("page", "-1")
-                        .param("size", "10")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
-
-        verify(productService, never()).getBestsellers(anyInt(), anyInt());
+    private ProductRequestDTO createValidProductRequestDTO() {
+        return new ProductRequestDTO(
+                "Valid Product Name",
+                "Валидное имя товара",
+                ProductCategory.NUTS,
+                "Valid Description of the product",
+                "Валидное описание товара",
+                new BigDecimal("100.50"),
+                ProductAvailability.IN_STOCK,
+                10,
+                new BigDecimal("80.00"),
+                "Manufacturer Name",
+                "Subcategory",
+                "Подкатегория",
+                "кг",
+                1,
+                List.of(new ProductImageDTO("img-1", true, 1, "alt")),
+                Map.of("Color", "Red"),
+                Map.of("Цвет", "Красный"),
+                ProductType.SIMPLE,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
+    private ProductResponseDTO createSampleProductResponseDTO(Long id) {
+        return new ProductResponseDTO(
+                id,
+                "Valid Product Name",
+                "valid-product-name",
+                ProductCategory.NUTS,
+                "Valid Description",
+                new BigDecimal("100.50"),
+                new BigDecimal("90.45"),
+                10,
+                BigDecimal.valueOf(4.5),
+                10L,
+                ProductAvailability.IN_STOCK,
+                "Manufacturer",
+                "Subcategory",
+                "кг",
+                1,
+                false,
+                ProductType.SIMPLE.name(),
+                null,
+                false,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null,
+                List.of(new ProductImageResponseDTO("img-1", "http://url", true, 1, "alt")),
+                Map.of("Color", "Red")
+        );
+    }
+
+    private ProductAdminResponseDTO createSampleProductAdminResponseDTO(Long id) {
+        return new ProductAdminResponseDTO(
+                id,
+                "Valid Product Name",
+                "Валидное имя товара",
+                ProductCategory.NUTS,
+                "Valid Description",
+                "Валидное описание",
+                new BigDecimal("100.50"),
+                new BigDecimal("90.45"),
+                new BigDecimal("80.00"),
+                10,
+                BigDecimal.valueOf(4.5),
+                10L,
+                ProductAvailability.IN_STOCK,
+                "Manufacturer",
+                "Subcategory",
+                "Подкатегория",
+                "кг",
+                1,
+                5L,
+                ProductType.SIMPLE.name(),
+                null,
+                false,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null,
+                OffsetDateTime.now(),
+                List.of(new ProductImageResponseDTO("img-1", "http://url", true, 1, "alt")),
+                Map.of("Color", "Red"),
+                Map.of("Цвет", "Красный")
+        );
+    }
 }

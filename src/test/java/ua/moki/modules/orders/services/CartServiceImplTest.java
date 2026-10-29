@@ -5,10 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.utility.TestcontainersConfiguration;
+import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.orders.domains.Cart;
 import ua.moki.modules.orders.dtos.CartResponseDTO;
 import ua.moki.modules.orders.repositories.CartRepository;
@@ -27,10 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
-@Import(TestcontainersConfiguration.class)
-public class CartServiceImplTest {
+public class CartServiceImplTest extends BaseIntegrationTest {
 
     @Autowired
     private CartServiceImpl cartService;
@@ -63,8 +57,11 @@ public class CartServiceImplTest {
 
         testProduct = new Product();
         testProduct.setName("Product");
+        testProduct.setNameRu("Продукт");
+        testProduct.setSlug("product-" + UUID.randomUUID());
         testProduct.setProductCategory(ProductCategory.DRIED_FRUITS);
         testProduct.setDescription("Test product");
+        testProduct.setDescriptionRu("Тестовый продукт");
         testProduct.setPurchasePrice(BigDecimal.valueOf(100));
         testProduct.setDiscount(0);
         testProduct.setPrice(BigDecimal.valueOf(100));
@@ -73,6 +70,8 @@ public class CartServiceImplTest {
         testProduct.setValueOfInitOfMeasure(1);
         testProduct.setManufacturerOfTheProduct("Test Factory");
         testProduct.setSubcategory("General");
+        testProduct.setSubcategoryRu("Общая");
+        testProduct.setAllowCustomWeight(false);
         testProduct.setRating(BigDecimal.ZERO);
         testProduct.setCreationTime(OffsetDateTime.now());
 
@@ -80,7 +79,7 @@ public class CartServiceImplTest {
     }
 
     @AfterEach
-    void  tearDown() {
+    void tearDown() {
         cartRepository.deleteAll();
         userRepository.deleteAll();
         productRepository.deleteAll();
@@ -90,7 +89,7 @@ public class CartServiceImplTest {
     @DisplayName("Should create a new cart and add item if cart doesn't exist")
     void addToCart_shouldCreateCartAndAddItem() {
 
-        CartResponseDTO response = cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 2);
+        CartResponseDTO response = cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 2, null);
 
         assertThat(response).isNotNull();
         assertThat(response.items()).hasSize(1);
@@ -104,9 +103,9 @@ public class CartServiceImplTest {
     @Test
     @DisplayName("Should update quantity if item already exists in cart")
     void addToCart_shouldUpdateExistingItemQuantity() {
-        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 2);
+        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 2, null);
 
-        CartResponseDTO response = cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 3);
+        CartResponseDTO response = cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 3, null);
 
         assertThat(response.items()).hasSize(1);
         assertThat(response.items().getFirst().quantity()).isEqualTo(5); // 2 + 3
@@ -117,9 +116,9 @@ public class CartServiceImplTest {
     void addToCart_shouldAddDifferentProduct() {
         Product secondProduct = createAndSaveProduct(BigDecimal.valueOf(50.00));
 
-        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 1);
+        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 1, null);
 
-        CartResponseDTO response = cartService.addToCart(testUser.getPublicId(), secondProduct.getId(), 2);
+        CartResponseDTO response = cartService.addToCart(testUser.getPublicId(), secondProduct.getId(), 2, null);
 
         assertThat(response.items()).hasSize(2);
     }
@@ -127,7 +126,7 @@ public class CartServiceImplTest {
     @Test
     @DisplayName("Should remove all items from the cart when clearCart is called")
     void clearCart_shouldRemoveAllItems() {
-        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 5);
+        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 5, null);
 
         Cart cartBefore = cartRepository.findCartByUser_PublicId(testUser.getPublicId()).orElseThrow();
         assertThat(cartBefore.getItems()).isNotEmpty();
@@ -154,8 +153,8 @@ public class CartServiceImplTest {
 
         User secondUser = createAndSaveUser();
 
-        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 1);
-        cartService.addToCart(secondUser.getPublicId(), testProduct.getId(), 3);
+        cartService.addToCart(testUser.getPublicId(), testProduct.getId(), 1, null);
+        cartService.addToCart(secondUser.getPublicId(), testProduct.getId(), 3, null);
 
         cartService.clearCart(testUser);
 
@@ -168,34 +167,39 @@ public class CartServiceImplTest {
     }
 
     private Product createAndSaveProduct(BigDecimal price) {
-        Product testProduct = new Product();
-        testProduct.setName("Test Product");
-        testProduct.setProductCategory(ProductCategory.DRIED_FRUITS);
-        testProduct.setDescription("Test product");
-        testProduct.setPurchasePrice(price);
-        testProduct.setDiscount(0);
-        testProduct.setPrice(BigDecimal.valueOf(100));
-        testProduct.setAvailability(ProductAvailability.IN_STOCK);
-        testProduct.setInitOfMeasure("шт");
-        testProduct.setValueOfInitOfMeasure(1);
-        testProduct.setManufacturerOfTheProduct("Test Factory");
-        testProduct.setSubcategory("General");
-        testProduct.setRating(BigDecimal.ZERO);
-        testProduct.setCreationTime(OffsetDateTime.now());
+        Product product = new Product();
+        product.setName("Test Product");
+        product.setNameRu("Тестовый продукт");
+        product.setSlug("test-product-" + UUID.randomUUID());
+        product.setProductCategory(ProductCategory.DRIED_FRUITS);
+        product.setDescription("Test product");
+        product.setDescriptionRu("Тестовый продукт");
+        product.setPurchasePrice(price);
+        product.setDiscount(0);
+        product.setPrice(BigDecimal.valueOf(100));
+        product.setAvailability(ProductAvailability.IN_STOCK);
+        product.setInitOfMeasure("шт");
+        product.setValueOfInitOfMeasure(1);
+        product.setManufacturerOfTheProduct("Test Factory");
+        product.setSubcategory("General");
+        product.setSubcategoryRu("Общая");
+        product.setAllowCustomWeight(false);
+        product.setRating(BigDecimal.ZERO);
+        product.setCreationTime(OffsetDateTime.now());
 
-        return productRepository.save(testProduct);
+        return productRepository.save(product);
     }
 
     private User createAndSaveUser() {
-        User testUser = new User();
-        testUser.setPublicId(UUID.randomUUID());
-        testUser.setFirstName("Test");
-        testUser.setSecondName("Test");
-        testUser.setEmail("email@test.com");
-        testUser.setPhoneNumber("+3800000000");
-        testUser.setPassword("pass");
-        testUser.setRoleType(RoleType.CUSTOMER);
-        testUser.setDeleted(false);
-        return userRepository.save(testUser);
+        User user = new User();
+        user.setPublicId(UUID.randomUUID());
+        user.setFirstName("Test");
+        user.setSecondName("Test");
+        user.setEmail("email@test.com");
+        user.setPhoneNumber("+3800000000");
+        user.setPassword("pass");
+        user.setRoleType(RoleType.CUSTOMER);
+        user.setDeleted(false);
+        return userRepository.save(user);
     }
 }

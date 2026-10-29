@@ -2,15 +2,11 @@ package ua.moki.modules.orders.services;
 
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.utility.TestcontainersConfiguration;
 import ua.moki.BaseIntegrationTest;
 import ua.moki.modules.orders.domains.Order;
 import ua.moki.modules.orders.dtos.*;
@@ -67,7 +63,7 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
 
         Product product = createAndSaveProduct("Phone", BigDecimal.valueOf(1000), ProductAvailability.IN_STOCK);
 
-        CartItemDTO itemDTO = new CartItemDTO(product.getId(), 2);
+        CartItemDTO itemDTO = new CartItemDTO(product.getId(), 2, null);
         OrderRequestDTO requestDTO = createOrderRequest(List.of(itemDTO));
 
         OrderResponseDTO response = orderService.createOrder(requestDTO);
@@ -93,7 +89,7 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
         );
 
         Product product = createAndSaveProduct("Laptop", BigDecimal.valueOf(5000), ProductAvailability.IN_STOCK);
-        OrderRequestDTO requestDTO = createOrderRequest(List.of(new CartItemDTO(product.getId(), 1)));
+        OrderRequestDTO requestDTO = createOrderRequest(List.of(new CartItemDTO(product.getId(), 1, null)));
 
         OrderResponseDTO response = orderService.createOrder(requestDTO);
 
@@ -109,7 +105,7 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
 
         Product product = createAndSaveProduct("SoldOutItem", BigDecimal.valueOf(50), ProductAvailability.OUT_OF_STOCK);
 
-        OrderRequestDTO requestDTO = createOrderRequest(List.of(new CartItemDTO(product.getId(), 1)));
+        OrderRequestDTO requestDTO = createOrderRequest(List.of(new CartItemDTO(product.getId(), 1, null)));
 
         assertThatThrownBy(() -> orderService.createOrder(requestDTO))
                 .isInstanceOf(OutOfStockException.class)
@@ -121,7 +117,7 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
     void createOrder_shouldThrowException_whenProductNotFound() {
 
         Long nonExistentId = 99999L;
-        OrderRequestDTO requestDTO = createOrderRequest(List.of(new CartItemDTO(nonExistentId, 1)));
+        OrderRequestDTO requestDTO = createOrderRequest(List.of(new CartItemDTO(nonExistentId, 1, null)));
 
         assertThatThrownBy(() -> orderService.createOrder(requestDTO))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -135,8 +131,8 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
         Product p2 = createAndSaveProduct("Item 2", BigDecimal.valueOf(50), ProductAvailability.IN_STOCK);
 
         List<CartItemDTO> items = List.of(
-                new CartItemDTO(p1.getId(), 2),
-                new CartItemDTO(p2.getId(), 3)
+                new CartItemDTO(p1.getId(), 2, null),
+                new CartItemDTO(p2.getId(), 3, null)
         );
 
         OrderRequestDTO requestDTO = createOrderRequest(items);
@@ -233,7 +229,7 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
 
         User owner = createAndSaveUser("Owner", RoleType.CUSTOMER, "owner@test.com");
 
-        Order order = createAndSaveOrder(OrderStatus.CONFIRMED, owner, "ORD-1");
+        Order order = createAndSaveOrder(OrderStatus.NEW, owner, "ORD-1");
 
         User admin = createAndSaveUser("Admin", RoleType.ADMIN, "admin.cancel@test.com");
 
@@ -380,13 +376,15 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("getAllOrders returns all orders with pagination and sorting")
-    void getAllOrders_shouldReturnPagedAndSortedOrders() {
+    void getAllOrders_shouldReturnPagedAndSortedOrders() throws InterruptedException {
 
         User user1 = createAndSaveUser("User1", RoleType.CUSTOMER, "user1.all@test.com");
         User user2 = createAndSaveUser("User2", RoleType.CUSTOMER, "user2.all@test.com");
 
         createAndSaveOrder(OrderStatus.NEW, user1, "ORD-ALL-1");
+        Thread.sleep(20);
         createAndSaveOrder(OrderStatus.NEW, user2, "ORD-ALL-2");
+        Thread.sleep(20);
         createAndSaveOrder(OrderStatus.NEW, user1, "ORD-ALL-3");
 
         Page<OrderResponseDTO> resultPage = orderService.getAllOrders(0, 2);
@@ -395,7 +393,7 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
         assertThat(resultPage.getTotalElements()).isEqualTo(3);
         assertThat(resultPage.getContent()).hasSize(2);
 
-        assertThat(resultPage.getContent().get(0).orderNumber()).isEqualTo("ORD-ALL-1");
+        assertThat(resultPage.getContent().get(0).orderNumber()).isEqualTo("ORD-ALL-3");
         assertThat(resultPage.getContent().get(1).orderNumber()).isEqualTo("ORD-ALL-2");
     }
 
@@ -412,8 +410,11 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
     private Product createAndSaveProduct(String name, BigDecimal price, ProductAvailability availability) {
         Product product = new Product();
         product.setName(name);
+        product.setNameRu(name + " RU");
+        product.setSlug("slug-" + UUID.randomUUID());
         product.setProductCategory(ProductCategory.DRIED_FRUITS);
         product.setDescription("Test product");
+        product.setDescriptionRu("Тестовый продукт");
         product.setPurchasePrice(BigDecimal.valueOf(100));
         product.setDiscount(0);
         product.setPrice(price);
@@ -422,6 +423,8 @@ public class OrderServiceImplTest extends BaseIntegrationTest {
         product.setValueOfInitOfMeasure(1);
         product.setManufacturerOfTheProduct("Test Factory");
         product.setSubcategory("General");
+        product.setSubcategoryRu("Общая");
+        product.setAllowCustomWeight(false);
         product.setRating(BigDecimal.ZERO);
         product.setCreationTime(OffsetDateTime.now());
 

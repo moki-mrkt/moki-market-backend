@@ -17,6 +17,7 @@ import ua.moki.modules.feedback.dtos.FeedbackAnswerDTO;
 import ua.moki.modules.feedback.dtos.FeedbackRequestDTO;
 import ua.moki.modules.feedback.dtos.FeedbackResponseDTO;
 import ua.moki.modules.feedback.dtos.FeedbackUpdateDTO;
+import ua.moki.modules.feedback.dtos.ProductFeedbackResponseDTO;
 import ua.moki.modules.feedback.repositories.FeedbackRepository;
 import ua.moki.modules.feedback.services.FeedbackService;
 import ua.moki.modules.products.domains.Product;
@@ -69,8 +70,11 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
 
         testProduct = new Product();
         testProduct.setName("Product");
+        testProduct.setNameRu("Продукт");
+        testProduct.setSlug("product-" + UUID.randomUUID());
         testProduct.setProductCategory(ProductCategory.DRIED_FRUITS);
         testProduct.setDescription("Test product");
+        testProduct.setDescriptionRu("Тестовый продукт");
         testProduct.setPurchasePrice(BigDecimal.valueOf(100));
         testProduct.setDiscount(0);
         testProduct.setPrice(BigDecimal.valueOf(100));
@@ -79,6 +83,8 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
         testProduct.setValueOfInitOfMeasure(1);
         testProduct.setManufacturerOfTheProduct("Test Factory");
         testProduct.setSubcategory("General");
+        testProduct.setSubcategoryRu("Общая");
+        testProduct.setAllowCustomWeight(false);
         testProduct.setRating(BigDecimal.ZERO);
         testProduct.setCreationTime(OffsetDateTime.now());
         productRepository.save(testProduct);
@@ -346,13 +352,28 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
         );
     }
 
+    private User createExtraUser(String emailPrefix) {
+        User u = new User();
+        u.setPublicId(UUID.randomUUID());
+        u.setFirstName("Test");
+        u.setSecondName("User");
+        u.setEmail(emailPrefix + "-" + UUID.randomUUID() + "@test.com");
+        u.setPhoneNumber("+3800000000");
+        u.setPassword("password");
+        u.setRoleType(RoleType.CUSTOMER);
+        u.setDeleted(false);
+        return userRepository.save(u);
+    }
+
     @Test
     @DisplayName("Should return average rating for a specific product")
     void getAverageRatingForProduct_shouldReturnCorrectAverage() {
+        User user2 = createExtraUser("avg2");
+        User user3 = createExtraUser("avg3");
 
         feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO(testProduct.getId(), "Good", 5));
-        feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO( testProduct.getId(), "Average", 4));
-        feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO(testProduct.getId(), "Bad", 2));
+        feedbackService.createFeedback(user2.getPublicId(), new FeedbackRequestDTO(testProduct.getId(), "Average", 4));
+        feedbackService.createFeedback(user3.getPublicId(), new FeedbackRequestDTO(testProduct.getId(), "Bad", 2));
 
         feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO(null, "Store feedback", 1));
 
@@ -392,9 +413,10 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
     @Test
     @DisplayName("Should return average rating for the store")
     void getAverageRatingForStore_shouldReturnCorrectAverage() {
+        User user2 = createExtraUser("storeavg2");
 
         feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO(null, "Great shop", 5));
-        feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO(null, "OK", 3));
+        feedbackService.createFeedback(user2.getPublicId(), new FeedbackRequestDTO(null, "OK", 3));
 
         feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO(testProduct.getId(), "Product", 1));
 
@@ -453,11 +475,11 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should return paged feedbacks for a specific user sorted by creation date")
+    @DisplayName("Should return paged product feedbacks for a specific user sorted by creation date")
     void getFeedbacksByUserId_shouldReturnPagedFeedbacks() {
 
-        FeedbackRequestDTO feedback1 = new FeedbackRequestDTO(null, "First feedback", 3);
-        FeedbackRequestDTO feedback2 = new FeedbackRequestDTO( testProduct.getId(), "Second feedback", 5);
+        FeedbackRequestDTO feedback1 = new FeedbackRequestDTO(null, "First store feedback", 3);
+        FeedbackRequestDTO feedback2 = new FeedbackRequestDTO(testProduct.getId(), "Second product feedback", 5);
 
         feedbackService.createFeedback(testUser.getPublicId(), feedback1);
         feedbackService.createFeedback(testUser.getPublicId(), feedback2);
@@ -472,33 +494,35 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
         anotherUser.setRoleType(RoleType.CUSTOMER);
         anotherUser.setDeleted(false);
         userRepository.save(anotherUser);
-        feedbackService.createFeedback(anotherUser.getPublicId(), new FeedbackRequestDTO(null, "Other user feedback", 1));
+        feedbackService.createFeedback(anotherUser.getPublicId(), new FeedbackRequestDTO(testProduct.getId(), "Other user feedback", 1));
 
-        Page<FeedbackResponseDTO> result = feedbackService.getFeedbacksByUserId(testUser.getPublicId(), 0, 10);
+        Page<ProductFeedbackResponseDTO> result = feedbackService.getUserFeedbacksAboutProducts(testUser.getPublicId(), 0, 10);
 
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getContent().get(0).comment()).isEqualTo("Second feedback");
-        assertThat(result.getContent().get(1).comment()).isEqualTo("First feedback");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst().comment()).isEqualTo("Second product feedback");
+        assertThat(result.getTotalElements()).isEqualTo(1);
 
-        assertThat(result.getTotalElements()).isEqualTo(2);
+        FeedbackResponseDTO storeFeedback = feedbackService.getUserFeedbackAboutStore(testUser.getPublicId());
+        assertThat(storeFeedback).isNotNull();
+        assertThat(storeFeedback.comment()).isEqualTo("First store feedback");
     }
 
     @Test
     @DisplayName("Should return paged feedbacks for a specific product sorted by creation date")
     void getFeedbacksByProductId_shouldReturnPagedFeedbacks() {
+        User user2 = createExtraUser("prodpage2");
 
         FeedbackRequestDTO feedback1 = new FeedbackRequestDTO(testProduct.getId(), "Good quality", 4);
         feedbackService.createFeedback(testUser.getPublicId(), feedback1);
 
-        FeedbackRequestDTO feedback2 = new FeedbackRequestDTO( testProduct.getId(), "Amazing product!", 5);
-        feedbackService.createFeedback(testUser.getPublicId(), feedback2);
+        FeedbackRequestDTO feedback2 = new FeedbackRequestDTO(testProduct.getId(), "Amazing product!", 5);
+        feedbackService.createFeedback(user2.getPublicId(), feedback2);
 
         feedbackService.createFeedback(testUser.getPublicId(), new FeedbackRequestDTO(null, "Nice shop", 5));
 
 
         Page<FeedbackResponseDTO> result = feedbackService.getFeedbacksByProductId(testProduct.getId(), 0, 10);
 
-        // Then: перевіряємо кількість та сортування (descending)
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).comment()).isEqualTo("Amazing product!");
         assertThat(result.getContent().get(1).comment()).isEqualTo("Good quality");
@@ -537,7 +561,8 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
     @DisplayName("Should handle pagination correctly for product feedbacks")
     void getFeedbacksByProductId_shouldHandlePagination() {
         for (int i = 1; i <= 3; i++) {
-            feedbackService.createFeedback(testUser.getPublicId(),
+            User u = createExtraUser("prodpage-" + i);
+            feedbackService.createFeedback(u.getPublicId(),
                     new FeedbackRequestDTO(testProduct.getId(), "Feedback " + i, 5));
         }
 
@@ -551,12 +576,13 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
     @Test
     @DisplayName("Should return only store feedbacks sorted by creation date")
     void getFeedbacksAboutStore_shouldReturnOnlyStoreFeedbacks() {
+        User user2 = createExtraUser("storelist2");
 
         FeedbackRequestDTO storeFeedback1 = new FeedbackRequestDTO(null, "First store feedback", 5);
         feedbackService.createFeedback(testUser.getPublicId(), storeFeedback1);
 
         FeedbackRequestDTO storeFeedback2 = new FeedbackRequestDTO(null, "Second store feedback", 4);
-        feedbackService.createFeedback(testUser.getPublicId(), storeFeedback2);
+        feedbackService.createFeedback(user2.getPublicId(), storeFeedback2);
 
         FeedbackRequestDTO productFeedback = new FeedbackRequestDTO(testProduct.getId(), "Product feedback", 5);
         feedbackService.createFeedback(testUser.getPublicId(), productFeedback);
@@ -587,8 +613,9 @@ public class FeedbackServiceImplTest  extends BaseIntegrationTest {
     void getFeedbacksAboutStore_shouldHandlePagination() {
 
         for (int i = 1; i <= 3; i++) {
-            feedbackService.createFeedback(testUser.getPublicId(),
-                    new FeedbackRequestDTO(null,"Store feedback " + i, 5));
+            User u = createExtraUser("storepage-" + i);
+            feedbackService.createFeedback(u.getPublicId(),
+                    new FeedbackRequestDTO(null, "Store feedback " + i, 5));
         }
 
         Page<FeedbackResponseDTO> page = feedbackService.getFeedbacksAboutStore(0, 2);

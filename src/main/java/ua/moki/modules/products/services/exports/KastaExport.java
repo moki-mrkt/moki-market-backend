@@ -44,7 +44,7 @@ public class KastaExport extends AbstractYmlExporter {
         return List.of(
                 new SimpleParam("Колір", "-"),
                 new SimpleParam("Розмір", "-"),
-                new SimpleParam("Вага, " + weightUnit, String.valueOf(weightValue))
+                new SimpleParam("Вага", formatWeightParam(weightValue, weightUnit))
         );
     }
 
@@ -55,6 +55,7 @@ public class KastaExport extends AbstractYmlExporter {
                                 String categoryId) {
         return new Offer(
                 offerId,
+                resolveGroupId(product),
                 available,
                 null,
                 null,

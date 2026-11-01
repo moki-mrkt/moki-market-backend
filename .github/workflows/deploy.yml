@@ -59,6 +59,7 @@ jobs:
 
             docker compose -f docker-compose.prod.yml stop backend
             docker compose -f docker-compose.prod.yml build --no-cache backend
-            docker compose -f docker-compose.prod.yml up -d backend
+            docker compose -f docker-compose.prod.yml up -d backend nginx
+            docker compose -f docker-compose.prod.yml restart nginx
             
             docker image prune -f

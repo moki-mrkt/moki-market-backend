@@ -208,6 +208,30 @@ public abstract class AbstractYmlExporter {
         return cleanBaseName + " " + weightStr;
     }
 
+    protected String formatWeightParam(BigDecimal weightValue, String weightUnit) {
+        if (weightValue == null) {
+            return "";
+        }
+        String unit = (weightUnit == null || weightUnit.isBlank()) ? "г" : weightUnit.trim();
+
+        if ("г".equalsIgnoreCase(unit) && weightValue.compareTo(new BigDecimal("1000")) >= 0) {
+            BigDecimal kg = weightValue.divide(new BigDecimal("1000"), 3, RoundingMode.HALF_UP)
+                    .stripTrailingZeros();
+            return kg.toPlainString() + " кг";
+        }
+
+        return weightValue.stripTrailingZeros().toPlainString() + " " + unit;
+    }
+
+    protected String resolveGroupId(Product product) {
+        if (product.getProductType() == ProductType.WEIGHT_BASED
+                && product.getWeightOptions() != null
+                && !product.getWeightOptions().isEmpty()) {
+            return String.valueOf(product.getId());
+        }
+        return null;
+    }
+
     protected List<String> getPictureUrls(Product product, Integer limit, String suffix) {
         var stream = product.getImages().stream();
         if (limit != null) {

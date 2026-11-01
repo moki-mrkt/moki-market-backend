@@ -69,6 +69,7 @@ public class RozetkaExport extends AbstractYmlExporter {
                         new ParamValue("uk", "1"),
                         new ParamValue("ru", "1")
                 )),
+                new SimpleParam("Вага", formatWeightParam(weightValue, weightUnit)),
                 new SimpleParam("Підкатегорія", p.getSubcategory())
         );
     }
@@ -80,6 +81,7 @@ public class RozetkaExport extends AbstractYmlExporter {
                                 String categoryId) {
         return new Offer(
                 offerId,
+                resolveGroupId(product),
                 available,
                 null,
                 null,

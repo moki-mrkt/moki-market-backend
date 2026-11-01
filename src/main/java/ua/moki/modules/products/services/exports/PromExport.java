@@ -47,7 +47,7 @@ public class PromExport extends AbstractYmlExporter {
     protected List<Param> buildParams(Product product, BigDecimal weightValue, String weightUnit) {
         return List.of(
                 new SimpleParam("Гарантія", "1 місяць"),
-                new SimpleParam("Вага", weightUnit, String.valueOf(weightValue))
+                new SimpleParam("Вага", formatWeightParam(weightValue, weightUnit))
         );
     }
 
@@ -58,6 +58,7 @@ public class PromExport extends AbstractYmlExporter {
                                 String categoryId) {
         return new Offer(
                 offerId,
+                resolveGroupId(product),
                 available,
                 "true",
                 "r",

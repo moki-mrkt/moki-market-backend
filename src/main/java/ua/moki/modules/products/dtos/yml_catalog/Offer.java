@@ -13,10 +13,10 @@ import java.util.List;
 public record Offer(
         @JacksonXmlProperty(isAttribute = true)
         String id,
+        @JacksonXmlProperty(isAttribute = true, localName = "group_id")
+        String groupId,
         @JacksonXmlProperty(isAttribute = true)
-        String available, // String ("true"/"false") замість boolean для гнучкості
-
-        // Специфічні атрибути для Prom
+        String available,
         @JacksonXmlProperty(isAttribute = true, localName = "in_stock")
         String inStock,
         @JacksonXmlProperty(isAttribute = true, localName = "selling_type")

@@ -2,11 +2,12 @@ package ua.moki.infrastructure.storage.controllers;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import ua.moki.infrastructure.storage.dtos.CharacteristicsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.dtos.DescriptionGeneratorDTO;
+import ua.moki.infrastructure.storage.dtos.GeneratedCharacteristicsDTO;
 import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 
 @RestController
@@ -21,9 +22,22 @@ public class GeminiProductController {
     @SecurityRequirements()
     public ResponseEntity<String> generateDescription(@RequestBody DescriptionGeneratorDTO descriptionGeneratorDTO) {
 
-        String generateDescription = geminiProductGenerator.generateDescription(descriptionGeneratorDTO.nameProduct(), descriptionGeneratorDTO.attributes());
+        String generateDescription = geminiProductGenerator.generateDescription(
+                descriptionGeneratorDTO.nameProduct(),
+                descriptionGeneratorDTO.attributes()
+        );
 
         return ResponseEntity.ok(generateDescription);
+    }
+
+    @PostMapping(value = "/characteristics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @SecurityRequirements()
+    public ResponseEntity<GeneratedCharacteristicsDTO> generateCharacteristics(
+            @RequestBody CharacteristicsGeneratorRequestDTO requestDTO
+    ) {
+        GeneratedCharacteristicsDTO generated = geminiProductGenerator.generateCharacteristics(requestDTO);
+        return ResponseEntity.ok(generated);
     }
 
 }

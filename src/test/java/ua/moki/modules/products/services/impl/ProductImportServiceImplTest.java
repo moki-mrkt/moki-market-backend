@@ -13,6 +13,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import ua.moki.infrastructure.storage.dtos.CharacteristicsGeneratorRequestDTO;
+import ua.moki.infrastructure.storage.dtos.GeneratedCharacteristicsDTO;
 import ua.moki.infrastructure.storage.dtos.TranslatorDTO;
 import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 import ua.moki.infrastructure.storage.service.TranslatorService;
@@ -196,6 +198,63 @@ class ProductImportServiceImplTest {
         assertThat(dto.weightOptions()).hasSize(1);
         assertThat(dto.weightOptions().getFirst().weightValue()).isEqualTo(1000);
         assertThat(dto.weightOptions().getFirst().price()).isEqualByComparingTo("520");
+    }
+
+    @Test
+    @DisplayName("importProductsFromExcel auto-generates UA and RU characteristics via Gemini when characteristics cell is empty")
+    void importProductsFromExcel_shouldAutoGenerateCharacteristicsWhenCellIsEmpty() throws Exception {
+        byte[] xlsxBytes;
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Sheet1");
+            Row row = sheet.createRow(0);
+            row.createCell(0).setCellValue("Фісташки не солоні Alesto 250г");
+            row.createCell(1).setCellValue("210");
+            row.createCell(2).setCellValue(""); // порожня колонка характеристик
+            row.createCell(3).setCellValue("Alesto");
+            row.createCell(4).setCellValue("Звичайний");
+            row.createCell(5).setCellValue("Горіхи");
+            row.createCell(6).setCellValue("Фісташки");
+            row.createCell(7).setCellValue("250");
+            row.createCell(8).setCellValue("г");
+            wb.write(baos);
+            xlsxBytes = baos.toByteArray();
+        }
+
+        when(productRepository.existsBySlug(any())).thenReturn(false);
+        when(geminiProductGenerator.generateCharacteristics(any(CharacteristicsGeneratorRequestDTO.class)))
+                .thenReturn(new GeneratedCharacteristicsDTO(
+                        Map.of("Обробка", "Не солоні", "Виробник", "Alesto", "Пакування", "250г"),
+                        Map.of("Упаковка", "250 г", "Обработка", "Несоленые", "Производитель", "Alesto")
+                ));
+        when(geminiProductGenerator.generateDescription(any(), any())).thenReturn("Чудові несолоні фісташки Alesto");
+        when(translatorService.translateTextsToRu(any())).thenReturn(new TranslatorDTO(
+                "Несоленые фисташки Alesto 250 г",
+                "Фисташки",
+                "Отличные несоленые фисташки Alesto",
+                Map.of()
+        ));
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "pistachios.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                xlsxBytes
+        );
+
+        ProductImportResultDTO result = productImportService.importProductsFromExcel(file);
+
+        assertThat(result.importedCount()).isEqualTo(1);
+
+        ArgumentCaptor<ProductRequestDTO> captor = ArgumentCaptor.forClass(ProductRequestDTO.class);
+        verify(productService).createProduct(captor.capture());
+
+        ProductRequestDTO dto = captor.getValue();
+        assertThat(dto.characteristics()).containsEntry("Обробка", "Не солоні")
+                .containsEntry("Виробник", "Alesto")
+                .containsEntry("Пакування", "250г");
+        assertThat(dto.characteristicsRu()).containsEntry("Упаковка", "250 г")
+                .containsEntry("Обработка", "Несоленые")
+                .containsEntry("Производитель", "Alesto");
     }
 
     @Test

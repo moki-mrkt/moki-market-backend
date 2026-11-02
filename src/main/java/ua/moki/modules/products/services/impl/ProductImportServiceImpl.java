@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import ua.moki.infrastructure.storage.dtos.CharacteristicsGeneratorRequestDTO;
+import ua.moki.infrastructure.storage.dtos.GeneratedCharacteristicsDTO;
 import ua.moki.infrastructure.storage.dtos.TranslatorDTO;
 import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 import ua.moki.infrastructure.storage.service.TranslatorService;
@@ -147,6 +149,29 @@ public class ProductImportServiceImpl implements ProductImportService {
 
         String rawCharacteristics = row.getCell(col.characteristicsIdx);
         Map<String, String> characteristics = parseCharacteristics(rawCharacteristics);
+        Map<String, String> aiCharacteristicsRu = null;
+
+        if (characteristics.isEmpty()) {
+            GeneratedCharacteristicsDTO generatedChars = geminiProductGenerator.generateCharacteristics(
+                    new CharacteristicsGeneratorRequestDTO(
+                            name,
+                            category.getTitle(),
+                            subcategory,
+                            manufacturer,
+                            valueOfInitOfMeasure,
+                            initOfMeasure
+                    )
+            );
+            if (generatedChars != null) {
+                if (generatedChars.characteristics() != null && !generatedChars.characteristics().isEmpty()) {
+                    characteristics = new LinkedHashMap<>(generatedChars.characteristics());
+                }
+                if (generatedChars.characteristicsRu() != null && !generatedChars.characteristicsRu().isEmpty()) {
+                    aiCharacteristicsRu = new LinkedHashMap<>(generatedChars.characteristicsRu());
+                }
+            }
+        }
+
         String attributesForPrompt = buildAttributesString(characteristics, rawCharacteristics);
 
         boolean allowCustomWeight = false;
@@ -193,7 +218,10 @@ public class ProductImportServiceImpl implements ProductImportService {
         description = truncate(description.trim(), 5000);
 
         // 2. Переклад через TranslatorServiceImpl
-        TranslatorDTO toTranslate = new TranslatorDTO(name, subcategory, description, characteristics);
+        Map<String, String> charsToTranslate = (aiCharacteristicsRu != null && !aiCharacteristicsRu.isEmpty())
+                ? Map.of()
+                : characteristics;
+        TranslatorDTO toTranslate = new TranslatorDTO(name, subcategory, description, charsToTranslate);
         TranslatorDTO translated = translatorService.translateTextsToRu(toTranslate);
 
         String nameRu = (translated != null && translated.name() != null && translated.name().trim().length() >= 2)
@@ -208,9 +236,14 @@ public class ProductImportServiceImpl implements ProductImportService {
                 ? truncate(translated.description().trim(), 5000)
                 : description;
 
-        Map<String, String> characteristicsRu = (translated != null && translated.characteristics() != null)
-                ? translated.characteristics()
-                : new HashMap<>(characteristics);
+        Map<String, String> characteristicsRu;
+        if (aiCharacteristicsRu != null && !aiCharacteristicsRu.isEmpty()) {
+            characteristicsRu = aiCharacteristicsRu;
+        } else if (translated != null && translated.characteristics() != null && !translated.characteristics().isEmpty()) {
+            characteristicsRu = translated.characteristics();
+        } else {
+            characteristicsRu = new HashMap<>(characteristics);
+        }
 
         return new ProductRequestDTO(
                 name,

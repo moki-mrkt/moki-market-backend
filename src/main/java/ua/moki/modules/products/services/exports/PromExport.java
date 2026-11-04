@@ -10,6 +10,7 @@ import ua.moki.modules.products.enums.ProductCategory;
 import ua.moki.modules.products.repositories.ProductRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -56,6 +57,16 @@ public class PromExport extends AbstractYmlExporter {
                                 BigDecimal calculatedPrice, String offerName, String offerNameRu,
                                 String htmlDescription, String htmlDescriptionRu, List<Param> params,
                                 String categoryId) {
+        String keywordsUa = formatKeywords(product.getKeywords());
+        String keywordsRu = formatKeywords(product.getKeywordsRu());
+        if (keywordsRu == null) {
+            keywordsRu = keywordsUa;
+        }
+
+        BigDecimal oldPrice = calculatedPrice != null
+                ? calculatedPrice.multiply(new BigDecimal("1.2")).setScale(0, RoundingMode.HALF_UP)
+                : null;
+
         return new Offer(
                 offerId,
                 resolveGroupId(product),
@@ -63,6 +74,7 @@ public class PromExport extends AbstractYmlExporter {
                 "true",
                 "r",
                 calculatedPrice,
+                oldPrice,
                 null,
                 null,
                 offerId + "-ART",
@@ -76,7 +88,20 @@ public class PromExport extends AbstractYmlExporter {
                 offerName,
                 htmlDescriptionRu,
                 htmlDescription,
+                keywordsRu,
+                keywordsUa,
                 params
         );
+    }
+
+    private String formatKeywords(List<String> keywords) {
+        if (keywords == null || keywords.isEmpty()) {
+            return null;
+        }
+        List<String> cleaned = keywords.stream()
+                .filter(k -> k != null && !k.isBlank())
+                .map(String::trim)
+                .toList();
+        return cleaned.isEmpty() ? null : String.join(", ", cleaned);
     }
 }

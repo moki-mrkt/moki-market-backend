@@ -23,6 +23,8 @@ public record Offer(
         String sellingType,
 
         BigDecimal price,
+        @JacksonXmlProperty(localName = "oldprice")
+        BigDecimal oldPrice,
         @JacksonXmlProperty(localName = "price_old")
         BigDecimal priceOld,
         @JacksonXmlProperty(localName = "price_promo")
@@ -55,7 +57,74 @@ public record Offer(
         @JacksonXmlProperty(localName = "description_ua")
         String descriptionUa,
 
+        // Специфічно для Prom ("Пошукові запити")
+        @JacksonXmlProperty(localName = "keywords")
+        String keywords,
+
+        @JacksonXmlProperty(localName = "keywords_ua")
+        String keywordsUa,
+
         @JacksonXmlElementWrapper(useWrapping = false)
         @JacksonXmlProperty(localName = "param")
         List<Param> params
-) {}
+) {
+    public Offer(
+            String id,
+            String groupId,
+            String available,
+            String inStock,
+            String sellingType,
+            BigDecimal price,
+            BigDecimal priceOld,
+            BigDecimal pricePromo,
+            String article,
+            Integer stockQuantity,
+            String url,
+            String currencyId,
+            String categoryId,
+            List<String> pictures,
+            String vendor,
+            String name,
+            String nameUa,
+            String description,
+            String descriptionUa,
+            String keywords,
+            String keywordsUa,
+            List<Param> params
+    ) {
+        this(
+                id, groupId, available, inStock, sellingType, price, null, priceOld, pricePromo,
+                article, stockQuantity, url, currencyId, categoryId, pictures, vendor,
+                name, nameUa, description, descriptionUa, keywords, keywordsUa, params
+        );
+    }
+
+    public Offer(
+            String id,
+            String groupId,
+            String available,
+            String inStock,
+            String sellingType,
+            BigDecimal price,
+            BigDecimal priceOld,
+            BigDecimal pricePromo,
+            String article,
+            Integer stockQuantity,
+            String url,
+            String currencyId,
+            String categoryId,
+            List<String> pictures,
+            String vendor,
+            String name,
+            String nameUa,
+            String description,
+            String descriptionUa,
+            List<Param> params
+    ) {
+        this(
+                id, groupId, available, inStock, sellingType, price, null, priceOld, pricePromo,
+                article, stockQuantity, url, currencyId, categoryId, pictures, vendor,
+                name, nameUa, description, descriptionUa, null, null, params
+        );
+    }
+}

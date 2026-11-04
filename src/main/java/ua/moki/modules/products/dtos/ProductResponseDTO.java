@@ -34,6 +34,44 @@ public record ProductResponseDTO(
         String variantName,
         String variantValue,
         List<ProductImageResponseDTO> images,
-        Map<String, String> characteristics
+        Map<String, String> characteristics,
+        List<String> keywords
 ) {
+    public ProductResponseDTO(
+            Long id,
+            String name,
+            String slug,
+            ProductCategory productCategory,
+            String description,
+            BigDecimal price,
+            BigDecimal priceWithDiscount,
+            Integer discount,
+            BigDecimal rating,
+            Long reviewsCount,
+            ProductAvailability availability,
+            String manufacturerOfTheProduct,
+            String subcategory,
+            String initOfMeasure,
+            Integer valueOfInitOfMeasure,
+            boolean isFavorite,
+            String productType,
+            Integer minCustomWeight,
+            Boolean allowCustomWeight,
+            List<ProductWeightOptionDTO> weightOptions,
+            List<ProductVariantDTO> siblingVariants,
+            String groupId,
+            String variantName,
+            String variantValue,
+            List<ProductImageResponseDTO> images,
+            Map<String, String> characteristics
+    ) {
+        this(
+                id, name, slug, productCategory, description, price, priceWithDiscount,
+                discount, rating, reviewsCount, availability, manufacturerOfTheProduct,
+                subcategory, initOfMeasure, valueOfInitOfMeasure, isFavorite,
+                productType, minCustomWeight, allowCustomWeight, weightOptions,
+                siblingVariants, groupId, variantName, variantValue, images,
+                characteristics, List.of()
+        );
+    }
 }

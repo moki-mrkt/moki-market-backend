@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ua.moki.infrastructure.storage.dtos.CharacteristicsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.dtos.GeneratedCharacteristicsDTO;
+import ua.moki.infrastructure.storage.dtos.GeneratedKeywordsDTO;
+import ua.moki.infrastructure.storage.dtos.KeywordsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.dtos.TranslatorDTO;
 import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 import ua.moki.infrastructure.storage.service.TranslatorService;
@@ -150,6 +152,8 @@ public class ProductImportServiceImpl implements ProductImportService {
         String rawCharacteristics = row.getCell(col.characteristicsIdx);
         Map<String, String> characteristics = parseCharacteristics(rawCharacteristics);
         Map<String, String> aiCharacteristicsRu = null;
+        List<String> keywords = new ArrayList<>();
+        List<String> aiKeywordsRu = null;
 
         if (characteristics.isEmpty()) {
             GeneratedCharacteristicsDTO generatedChars = geminiProductGenerator.generateCharacteristics(
@@ -168,6 +172,31 @@ public class ProductImportServiceImpl implements ProductImportService {
                 }
                 if (generatedChars.characteristicsRu() != null && !generatedChars.characteristicsRu().isEmpty()) {
                     aiCharacteristicsRu = new LinkedHashMap<>(generatedChars.characteristicsRu());
+                }
+                if (generatedChars.keywords() != null && !generatedChars.keywords().isEmpty()) {
+                    keywords = new ArrayList<>(generatedChars.keywords());
+                }
+                if (generatedChars.keywordsRu() != null && !generatedChars.keywordsRu().isEmpty()) {
+                    aiKeywordsRu = new ArrayList<>(generatedChars.keywordsRu());
+                }
+            }
+        }
+
+        if (keywords.isEmpty()) {
+            GeneratedKeywordsDTO generatedKeywords = geminiProductGenerator.generateKeywords(
+                    new KeywordsGeneratorRequestDTO(
+                            name,
+                            category.getTitle(),
+                            subcategory,
+                            manufacturer
+                    )
+            );
+            if (generatedKeywords != null) {
+                if (generatedKeywords.keywords() != null && !generatedKeywords.keywords().isEmpty()) {
+                    keywords = new ArrayList<>(generatedKeywords.keywords());
+                }
+                if (generatedKeywords.keywordsRu() != null && !generatedKeywords.keywordsRu().isEmpty()) {
+                    aiKeywordsRu = new ArrayList<>(generatedKeywords.keywordsRu());
                 }
             }
         }
@@ -221,7 +250,10 @@ public class ProductImportServiceImpl implements ProductImportService {
         Map<String, String> charsToTranslate = (aiCharacteristicsRu != null && !aiCharacteristicsRu.isEmpty())
                 ? Map.of()
                 : characteristics;
-        TranslatorDTO toTranslate = new TranslatorDTO(name, subcategory, description, charsToTranslate);
+        List<String> keywordsToTranslate = (aiKeywordsRu != null && !aiKeywordsRu.isEmpty())
+                ? List.of()
+                : keywords;
+        TranslatorDTO toTranslate = new TranslatorDTO(name, subcategory, description, charsToTranslate, keywordsToTranslate);
         TranslatorDTO translated = translatorService.translateTextsToRu(toTranslate);
 
         String nameRu = (translated != null && translated.name() != null && translated.name().trim().length() >= 2)
@@ -243,6 +275,15 @@ public class ProductImportServiceImpl implements ProductImportService {
             characteristicsRu = translated.characteristics();
         } else {
             characteristicsRu = new HashMap<>(characteristics);
+        }
+
+        List<String> keywordsRu;
+        if (aiKeywordsRu != null && !aiKeywordsRu.isEmpty()) {
+            keywordsRu = aiKeywordsRu;
+        } else if (translated != null && translated.keywords() != null && !translated.keywords().isEmpty()) {
+            keywordsRu = new ArrayList<>(translated.keywords());
+        } else {
+            keywordsRu = new ArrayList<>(keywords);
         }
 
         return new ProductRequestDTO(
@@ -269,7 +310,9 @@ public class ProductImportServiceImpl implements ProductImportService {
                 weightOptions,
                 groupId,
                 variantName,
-                variantValue
+                variantValue,
+                keywords,
+                keywordsRu
         );
     }
 

@@ -118,7 +118,7 @@ class SearchAnalyticsIntegrationTest extends BaseIntegrationTest {
         oldLog.setNormalizedQuery("старий запит");
         oldLog.setResultsCount(1L);
         oldLog.setZeroResults(false);
-        oldLog.setCreatedAt(OffsetDateTime.now().minusDays(120));
+        oldLog.setCreatedAt(OffsetDateTime.now().minusDays(400));
         searchAnalyticsRepository.save(oldLog);
 
         SearchLog recentLog = new SearchLog();

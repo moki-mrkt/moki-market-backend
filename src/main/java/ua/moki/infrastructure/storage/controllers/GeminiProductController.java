@@ -8,7 +8,11 @@ import org.springframework.web.bind.annotation.*;
 import ua.moki.infrastructure.storage.dtos.CharacteristicsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.dtos.DescriptionGeneratorDTO;
 import ua.moki.infrastructure.storage.dtos.GeneratedCharacteristicsDTO;
+import ua.moki.infrastructure.storage.dtos.GeneratedKeywordsDTO;
+import ua.moki.infrastructure.storage.dtos.KeywordsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
+import ua.moki.modules.products.dtos.BulkKeywordsGenerationResultDTO;
+import ua.moki.modules.products.services.ProductService;
 
 @RestController
 @RequestMapping("/generator")
@@ -16,6 +20,7 @@ import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 public class GeminiProductController {
 
     private final GeminiProductGenerator geminiProductGenerator;
+    private final ProductService productService;
 
     @PostMapping(value = "/description")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -38,6 +43,26 @@ public class GeminiProductController {
     ) {
         GeneratedCharacteristicsDTO generated = geminiProductGenerator.generateCharacteristics(requestDTO);
         return ResponseEntity.ok(generated);
+    }
+
+    @PostMapping(value = "/keywords")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @SecurityRequirements()
+    public ResponseEntity<GeneratedKeywordsDTO> generateKeywords(
+            @RequestBody KeywordsGeneratorRequestDTO requestDTO
+    ) {
+        GeneratedKeywordsDTO generated = geminiProductGenerator.generateKeywords(requestDTO);
+        return ResponseEntity.ok(generated);
+    }
+
+    @PostMapping(value = "/keywords/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @SecurityRequirements()
+    public ResponseEntity<BulkKeywordsGenerationResultDTO> generateKeywordsForAllProducts(
+            @RequestParam(defaultValue = "false") boolean overwrite
+    ) {
+        BulkKeywordsGenerationResultDTO result = productService.generateKeywordsForAllProducts(overwrite);
+        return ResponseEntity.ok(result);
     }
 
 }

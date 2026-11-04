@@ -156,4 +156,12 @@ public class ProductController {
         return  ResponseEntity.ok(productService.searchProducts(searchRequest, pageable));
     }
 
+    @PostMapping("/keywords/generate-all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<BulkKeywordsGenerationResultDTO> generateKeywordsForAllProducts(
+            @RequestParam(defaultValue = "false") boolean overwrite
+    ) {
+        return ResponseEntity.ok(productService.generateKeywordsForAllProducts(overwrite));
+    }
+
 }

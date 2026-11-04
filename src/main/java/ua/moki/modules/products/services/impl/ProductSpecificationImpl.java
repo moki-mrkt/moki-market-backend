@@ -32,6 +32,16 @@ public class ProductSpecificationImpl implements ProductSpecifications {
                 Predicate nameRuLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("nameRu")), searchSchema);
                 Predicate descLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), searchSchema);
                 Predicate descRuLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("descriptionRu")), searchSchema);
+                Predicate subcatLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("subcategory")), searchSchema);
+                Predicate subcatRuLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("subcategoryRu")), searchSchema);
+                Predicate keywordsLike = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("keywords").as(String.class)),
+                        searchSchema
+                );
+                Predicate keywordsRuLike = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("keywordsRu").as(String.class)),
+                        searchSchema
+                );
 
                 Expression<Double> nameSimilarity = criteriaBuilder.function(
                         "similarity",
@@ -40,9 +50,28 @@ public class ProductSpecificationImpl implements ProductSpecifications {
                         criteriaBuilder.literal(searchTerm)
                 );
 
-                Predicate fuzzyMatch = criteriaBuilder.greaterThan(nameSimilarity, 0.3);
+                Expression<Double> keywordsSimilarity = criteriaBuilder.function(
+                        "similarity",
+                        Double.class,
+                        criteriaBuilder.lower(root.get("keywords").as(String.class)),
+                        criteriaBuilder.literal(searchTerm)
+                );
 
-                predicates.add(criteriaBuilder.or(nameLike, nameRuLike, descLike, descRuLike, fuzzyMatch));
+                Predicate fuzzyMatch = criteriaBuilder.greaterThan(nameSimilarity, 0.3);
+                Predicate keywordsFuzzyMatch = criteriaBuilder.greaterThan(keywordsSimilarity, 0.3);
+
+                predicates.add(criteriaBuilder.or(
+                        nameLike,
+                        nameRuLike,
+                        descLike,
+                        descRuLike,
+                        subcatLike,
+                        subcatRuLike,
+                        keywordsLike,
+                        keywordsRuLike,
+                        fuzzyMatch,
+                        keywordsFuzzyMatch
+                ));
             }
 
             if (request.category() != null) {

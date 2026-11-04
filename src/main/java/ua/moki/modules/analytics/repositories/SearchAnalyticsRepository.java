@@ -68,7 +68,7 @@ public interface SearchAnalyticsRepository extends JpaRepository<SearchLog, Long
             """, nativeQuery = true)
     List<Object[]> findDailyStats(@Param("since") OffsetDateTime since);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM SearchLog s WHERE s.createdAt < :cutoff")
     int deleteByCreatedAtBefore(@Param("cutoff") OffsetDateTime cutoff);
 }

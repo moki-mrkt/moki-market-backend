@@ -40,6 +40,8 @@ class PromExportTest {
         product.setProductType(ProductType.WEIGHT_BASED);
         product.setAvailability(ProductAvailability.IN_STOCK);
         product.setDescription("Опис товару...");
+        product.setKeywords(List.of("кеш'ю смажений", "купити кеш'ю", "горіхи кеш'ю"));
+        product.setKeywordsRu(List.of("кешью жареный", "купить кешью", "орехи кешью"));
 
         ProductWeightOption opt250 = new ProductWeightOption();
         opt250.setWeightValue(250);
@@ -69,5 +71,9 @@ class PromExportTest {
         assertThat(xml).contains("<param name=\"Вага\">250 г</param>");
         assertThat(xml).contains("<param name=\"Вага\">500 г</param>");
         assertThat(xml).contains("<param name=\"Вага\">1 кг</param>");
+        assertThat(xml).contains("<price>189</price>");
+        assertThat(xml).contains("<oldprice>227</oldprice>");
+        assertThat(xml).contains("<keywords_ua>кеш'ю смажений, купити кеш'ю, горіхи кеш'ю</keywords_ua>");
+        assertThat(xml).contains("<keywords>кешью жареный, купить кешью, орехи кешью</keywords>");
     }
 }

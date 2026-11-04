@@ -333,3 +333,28 @@ databaseChangeLog:
                   name: allow_custom_weight
                   type: boolean
                   defaultValueBoolean: true
+  - changeSet:
+      id: add-keywords-to-products
+      author: KyryloPyvovarov
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: products
+                columnName: keywords
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: keywords
+                  type: jsonb
+                  defaultValue: "[]"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: keywords_ru
+                  type: jsonb
+                  defaultValue: "[]"
+                  constraints:
+                    nullable: false

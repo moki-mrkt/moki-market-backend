@@ -43,6 +43,16 @@ public class TranslatorServiceImpl implements TranslatorService {
             }
         }
 
+        List<String> cleanKeywords = new ArrayList<>();
+        if (translateUaDTO.keywords() != null) {
+            for (String kw : translateUaDTO.keywords()) {
+                if (kw != null && !kw.isBlank()) {
+                    cleanKeywords.add(kw.trim());
+                    textsToTranslate.add(kw.trim());
+                }
+            }
+        }
+
         Map<String, Object> requestBody = Map.of(
                 "text", textsToTranslate,
                 "source_lang", "UK",
@@ -79,7 +89,15 @@ public class TranslatorServiceImpl implements TranslatorService {
                 }
             }
 
-            return new TranslatorDTO(nameRu, subcategoryRu, descriptionRu, charsRu);
+            List<String> keywordsRu = new ArrayList<>();
+            for (int i = 0; i < cleanKeywords.size(); i++) {
+                String kwRu = translatedTexts.get(index++);
+                if (kwRu != null && !kwRu.isBlank()) {
+                    keywordsRu.add(kwRu.trim());
+                }
+            }
+
+            return new TranslatorDTO(nameRu, subcategoryRu, descriptionRu, charsRu, keywordsRu);
 
         } catch (Exception e) {
             log.error("Помилка під час перекладу: {}", e.getMessage());

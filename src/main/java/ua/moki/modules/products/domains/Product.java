@@ -111,6 +111,14 @@ public class Product {
     @Column(name = "characteristics_ru", columnDefinition = "jsonb")
     Map<String, String> characteristicsRu = new HashMap<>();
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "keywords", columnDefinition = "jsonb")
+    List<String> keywords = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "keywords_ru", columnDefinition = "jsonb")
+    List<String> keywordsRu = new ArrayList<>();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

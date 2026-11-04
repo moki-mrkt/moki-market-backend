@@ -77,6 +77,45 @@ public record ProductRequestDTO(
         String variantName,
         @Nullable
         @Size(max = 100)
-        String variantValue
+        String variantValue,
+        @Nullable
+        List<String> keywords,
+        @Nullable
+        List<String> keywordsRu
 ) {
+    public ProductRequestDTO(
+            String name,
+            String nameRu,
+            ProductCategory productCategory,
+            String description,
+            String descriptionRu,
+            BigDecimal price,
+            ProductAvailability availability,
+            Integer discount,
+            BigDecimal purchasePrice,
+            String manufacturerOfTheProduct,
+            String subcategory,
+            String subcategoryRu,
+            String initOfMeasure,
+            Integer valueOfInitOfMeasure,
+            List<ProductImageDTO> images,
+            Map<String, String> characteristics,
+            Map<String, String> characteristicsRu,
+            ProductType productType,
+            Integer minCustomWeight,
+            Boolean allowCustomWeight,
+            List<ProductWeightOptionDTO> weightOptions,
+            String groupId,
+            String variantName,
+            String variantValue
+    ) {
+        this(
+                name, nameRu, productCategory, description, descriptionRu,
+                price, availability, discount, purchasePrice, manufacturerOfTheProduct,
+                subcategory, subcategoryRu, initOfMeasure, valueOfInitOfMeasure,
+                images, characteristics, characteristicsRu, productType,
+                minCustomWeight, allowCustomWeight, weightOptions,
+                groupId, variantName, variantValue, List.of(), List.of()
+        );
+    }
 }

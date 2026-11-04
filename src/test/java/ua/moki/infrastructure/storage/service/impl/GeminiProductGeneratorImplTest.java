@@ -11,6 +11,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import ua.moki.infrastructure.storage.dtos.CharacteristicsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.dtos.GeneratedCharacteristicsDTO;
+import ua.moki.infrastructure.storage.dtos.GeneratedKeywordsDTO;
+import ua.moki.infrastructure.storage.dtos.KeywordsGeneratorRequestDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -49,7 +51,9 @@ class GeminiProductGeneratorImplTest {
                     "Упаковка": "250 г",
                     "Обработка": "Несоленые",
                     "Производитель": "Alesto"
-                  }
+                  },
+                  "keywords": ["фісташки не солоні", "фісташки Alesto"],
+                  "keywordsRu": ["фисташки несоленые", "фисташки Alesto"]
                 }
                 """;
 
@@ -83,6 +87,9 @@ class GeminiProductGeneratorImplTest {
                 .containsEntry("Упаковка", "250 г")
                 .containsEntry("Обработка", "Несоленые")
                 .containsEntry("Производитель", "Alesto");
+
+        assertThat(result.keywords()).containsExactly("фісташки не солоні", "фісташки Alesto");
+        assertThat(result.keywordsRu()).containsExactly("фисташки несоленые", "фисташки Alesto");
     }
 
     @Test
@@ -111,5 +118,46 @@ class GeminiProductGeneratorImplTest {
                 .containsEntry("Производитель", "Alesto")
                 .containsEntry("Упаковка", "500 г")
                 .containsEntry("Вид", "Горіхові суміші");
+    }
+
+    @Test
+    @DisplayName("generateKeywords parses UA and RU search queries from Gemini JSON response")
+    void generateKeywords_shouldParseJsonResponse() {
+        String jsonPayload = """
+                {
+                  "keywords": [
+                    "фісташки не солоні",
+                    "фісташки Alesto",
+                    "купити фісташки"
+                  ],
+                  "keywordsRu": [
+                    "фисташки несоленые",
+                    "фисташки Alesto",
+                    "купить фисташки"
+                  ]
+                }
+                """;
+
+        Map<String, Object> geminiApiResponse = Map.of(
+                "candidates", List.of(
+                        Map.of("content", Map.of(
+                                "parts", List.of(Map.of("text", jsonPayload))
+                        ))
+                )
+        );
+
+        when(restTemplate.postForObject(anyString(), any(), eq(Map.class))).thenReturn(geminiApiResponse);
+
+        GeneratedKeywordsDTO result = generator.generateKeywords(
+                new KeywordsGeneratorRequestDTO(
+                        "Фісташки не солоні Alesto 250г",
+                        "Горіхи",
+                        "Фісташки",
+                        "Alesto"
+                )
+        );
+
+        assertThat(result.keywords()).containsExactly("фісташки не солоні", "фісташки Alesto", "купити фісташки");
+        assertThat(result.keywordsRu()).containsExactly("фисташки несоленые", "фисташки Alesto", "купить фисташки");
     }
 }

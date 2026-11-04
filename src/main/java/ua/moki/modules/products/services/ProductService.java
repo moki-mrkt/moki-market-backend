@@ -27,5 +27,10 @@ public interface ProductService {
 
     SearchResponse searchProducts(ProductSearchRequestDTO request, Pageable pageable);
 
+    BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts(boolean overwrite);
+
+    default BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts() {
+        return generateKeywordsForAllProducts(false);
+    }
 
 }

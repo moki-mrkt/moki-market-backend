@@ -12,8 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ua.moki.infrastructure.storage.dtos.CharacteristicsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.dtos.GeneratedCharacteristicsDTO;
+import ua.moki.infrastructure.storage.dtos.GeneratedKeywordsDTO;
+import ua.moki.infrastructure.storage.dtos.KeywordsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +58,7 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
     @Override
     public GeneratedCharacteristicsDTO generateCharacteristics(CharacteristicsGeneratorRequestDTO req) {
         if (req == null || req.nameProduct() == null || req.nameProduct().isBlank()) {
-            return new GeneratedCharacteristicsDTO(Map.of(), Map.of());
+            return new GeneratedCharacteristicsDTO(Map.of(), Map.of(), List.of(), List.of());
         }
 
         String measureStr = formatMeasure(req.measureValue(), req.measureUnit());
@@ -63,7 +66,7 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
         String prompt = String.format(
                 """
                 Ти контент-менеджер інтернет-магазину продуктів та смаколиків Moki.
-                Згенеруй лаконічний набір із 3-4 характеристик товару українською (characteristics) та російською (characteristicsRu) мовами.
+                Згенеруй лаконічний набір із 3-4 характеристик товару українською (characteristics) та російською (characteristicsRu) мовами, а також по 8-10 релевантних пошукових запитів для маркетплейсу Prom.ua та пошуку на сайті українською (keywords) і російською (keywordsRu).
                 
                 Вхідні дані про товар:
                 - Назва: %s
@@ -77,9 +80,9 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
                    - Обов'язково включи "Виробник" (UA) / "Производитель" (RU), якщо виробник відомий.
                    - Обов'язково включи "Пакування" або "Фасування" (UA) / "Упаковка" або "Фасовка" (RU), якщо відомий розмір/вага (наприклад: "250г", "500г", "1кг").
                    - Додай 1-2 ключові характеристики з назви або підкатегорії товару (наприклад: "Обробка": "Не солоні" / "Смажені" / "Сирі", "Тип горіху": "Суміш" / "Фісташки" / "Кеш'ю", "Вид", "Смак", "Тип" тощо).
-                2. Значення мають бути короткими (1-3 слова), з великої літери.
-                3. Приклади еталонного результату:
-                   Приклад 1 (Фісташки не солоні Alesto 250г):
+                2. Значення характеристик мають бути короткими (1-3 слова), з великої літери.
+                3. Згенеруй 8-10 пошукових запитів у масивах "keywords" (UA) та "keywordsRu" (RU): короткі комерційні та інформаційні фрази по 1-4 слова, за якими покупці шукають цей товар на Prom.ua та на сайті.
+                4. Приклад еталонного результату:
                    {
                      "characteristics": {
                        "Обробка": "Не солоні",
@@ -90,22 +93,29 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
                        "Упаковка": "250 г",
                        "Обработка": "Несоленые",
                        "Производитель": "Alesto"
-                     }
-                   }
-                   Приклад 2 (Горіхова суміш Alesto 500г):
-                   {
-                     "characteristics": {
-                       "Виробник": "Alesto",
-                       "Фасування": "500г",
-                       "Тип горіху": "Суміш"
                      },
-                     "characteristicsRu": {
-                       "Фасовка": "500 г",
-                       "Тип ореха": "Смесь",
-                       "Производитель": "Alesto"
-                     }
+                     "keywords": [
+                       "фісташки не солоні",
+                       "фісташки Alesto",
+                       "фісташки 250г",
+                       "купити фісташки",
+                       "горіхи фісташки",
+                       "фісташки без солі",
+                       "смажені фісташки",
+                       "горішки до снеків"
+                     ],
+                     "keywordsRu": [
+                       "фисташки несоленые",
+                       "фисташки Alesto",
+                       "фисташки 250г",
+                       "купить фисташки",
+                       "орехи фисташки",
+                       "фисташки без соли",
+                       "жареные фисташки",
+                       "орешки к снекам"
+                     ]
                    }
-                4. Поверни ВИКЛЮЧНО валідний JSON об'єкт без markdown-обгорток з двома полями: "characteristics" та "characteristicsRu".
+                5. Поверни ВИКЛЮЧНО валідний JSON об'єкт без markdown-обгорток з чотирма полями: "characteristics", "characteristicsRu", "keywords", "keywordsRu".
                 """,
                 safeStr(req.nameProduct()),
                 safeStr(req.category()),
@@ -133,6 +143,87 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
         }
 
         return buildFallbackCharacteristics(req, measureStr);
+    }
+
+    @Override
+    public GeneratedKeywordsDTO generateKeywords(KeywordsGeneratorRequestDTO req) {
+        if (req == null || req.nameProduct() == null || req.nameProduct().isBlank()) {
+            return new GeneratedKeywordsDTO(List.of(), List.of());
+        }
+
+        String prompt = String.format(
+                """
+                Ти SEO-спеціаліст та контент-менеджер інтернет-магазину продуктів і смаколиків Moki.
+                Згенеруй по 10-12 релевантних пошукових запитів (ключових фраз) українською (keywords) та російською (keywordsRu) мовами для картки товару на Prom.ua (блок "Пошукові запити", де рекомендовано мінімум 8 запитів) та для внутрішнього пошуку на сайті.
+                
+                Вхідні дані про товар:
+                - Назва: %s
+                - Категорія: %s
+                - Підкатегорія: %s
+                - Виробник: %s
+                
+                Правила:
+                1. Кожен запит — це реальна пошукова фраза з 1-4 слів, яку вводять покупці (з малої літери, крім власних назв брендів).
+                2. Включи:
+                   - прямі назви товару та синоніми;
+                   - комбінації з виробником/брендом (якщо вказаний);
+                   - комбінації з категорією/підкатегорією та вагою/фасуванням (якщо є в назві);
+                   - комерційні запити ("купити ...", "... ціна", "натуральні ..." тощо).
+                3. Не дублюй однакові фрази.
+                4. Приклад еталонного результату для товару "Фісташки не солоні Alesto 250г":
+                   {
+                     "keywords": [
+                       "фісташки не солоні",
+                       "фісташки Alesto",
+                       "фісташки 250г",
+                       "купити фісташки",
+                       "горіхи фісташки",
+                       "фісташки без солі",
+                       "смажені фісташки",
+                       "фісташки Alesto 250 г",
+                       "натуральні фісташки",
+                       "горішки фісташки"
+                     ],
+                     "keywordsRu": [
+                       "фисташки несоленые",
+                       "фисташки Alesto",
+                       "фисташки 250г",
+                       "купить фисташки",
+                       "орехи фисташки",
+                       "фисташки без соли",
+                       "жареные фисташки",
+                       "фисташки Alesto 250 г",
+                       "натуральные фисташки",
+                       "орешки фисташки"
+                     ]
+                   }
+                5. Поверни ВИКЛЮЧНО валідний JSON об'єкт без markdown-обгорток з двома масивами рядків: "keywords" та "keywordsRu".
+                """,
+                safeStr(req.nameProduct()),
+                safeStr(req.category()),
+                safeStr(req.subcategory()),
+                safeStr(req.manufacturer())
+        );
+
+        Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
+                ),
+                "generationConfig", Map.of(
+                        "responseMimeType", "application/json"
+                )
+        );
+
+        String rawResponse = callGemini(requestBody);
+        GeneratedKeywordsDTO parsed = parseKeywordsJson(rawResponse);
+
+        if (parsed != null && !parsed.keywords().isEmpty()) {
+            return parsed;
+        }
+
+        return buildFallbackKeywords(req);
     }
 
     private String callGemini(Map<String, Object> requestBody) {
@@ -190,15 +281,85 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
             Map<String, Object> root = OBJECT_MAPPER.readValue(cleaned, new TypeReference<>() {});
             Map<String, String> ua = toStringMap(root.get("characteristics"));
             Map<String, String> ru = toStringMap(root.get("characteristicsRu"));
+            List<String> keywordsUa = toStringList(root.get("keywords"));
+            List<String> keywordsRu = toStringList(root.get("keywordsRu"));
 
             if (ua.isEmpty()) {
                 return null;
             }
-            return new GeneratedCharacteristicsDTO(ua, ru.isEmpty() ? new LinkedHashMap<>(ua) : ru);
+            return new GeneratedCharacteristicsDTO(
+                    ua,
+                    ru.isEmpty() ? new LinkedHashMap<>(ua) : ru,
+                    keywordsUa,
+                    keywordsRu.isEmpty() ? new ArrayList<>(keywordsUa) : keywordsRu
+            );
         } catch (Exception e) {
             log.warn("Не вдалося розпарсити JSON характеристик від Gemini: {}", e.getMessage());
             return null;
         }
+    }
+
+    private GeneratedKeywordsDTO parseKeywordsJson(String rawText) {
+        if (rawText == null || rawText.isBlank()) {
+            return null;
+        }
+        try {
+            String cleaned = rawText.trim();
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.replaceFirst("^```(?:json)?\\s*", "")
+                        .replaceFirst("\\s*```$", "")
+                        .trim();
+            }
+
+            Map<String, Object> root = OBJECT_MAPPER.readValue(cleaned, new TypeReference<>() {});
+            List<String> keywordsUa = toStringList(root.get("keywords"));
+            List<String> keywordsRu = toStringList(root.get("keywordsRu"));
+
+            if (keywordsUa.isEmpty()) {
+                return null;
+            }
+            return new GeneratedKeywordsDTO(
+                    keywordsUa,
+                    keywordsRu.isEmpty() ? new ArrayList<>(keywordsUa) : keywordsRu
+            );
+        } catch (Exception e) {
+            log.warn("Не вдалося розпарсити JSON пошукових запитів від Gemini: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private GeneratedKeywordsDTO buildFallbackKeywords(KeywordsGeneratorRequestDTO req) {
+        List<String> fallbackUa = new ArrayList<>();
+        if (req.nameProduct() != null && !req.nameProduct().isBlank()) {
+            String name = req.nameProduct().trim();
+            fallbackUa.add(name);
+            fallbackUa.add("купити " + name.toLowerCase());
+        }
+        if (req.subcategory() != null && !req.subcategory().isBlank()) {
+            fallbackUa.add(req.subcategory().trim().toLowerCase());
+        }
+        if (req.category() != null && !req.category().isBlank()) {
+            fallbackUa.add(req.category().trim().toLowerCase());
+        }
+        if (req.manufacturer() != null && !req.manufacturer().isBlank() && req.nameProduct() != null) {
+            fallbackUa.add(req.nameProduct().trim() + " " + req.manufacturer().trim());
+        }
+        return new GeneratedKeywordsDTO(fallbackUa, new ArrayList<>(fallbackUa));
+    }
+
+    private List<String> toStringList(Object obj) {
+        List<String> result = new ArrayList<>();
+        if (obj instanceof List<?> list) {
+            for (Object item : list) {
+                if (item != null) {
+                    String s = String.valueOf(item).trim();
+                    if (!s.isEmpty() && !result.contains(s)) {
+                        result.add(s);
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -235,7 +396,18 @@ public class GeminiProductGeneratorImpl implements GeminiProductGenerator {
             ru.put("Вид", req.subcategory().trim());
         }
 
-        return new GeneratedCharacteristicsDTO(ua, ru);
+        List<String> fallbackKeywords = new ArrayList<>();
+        if (req.nameProduct() != null && !req.nameProduct().isBlank()) {
+            fallbackKeywords.add(req.nameProduct().trim());
+        }
+        if (req.subcategory() != null && !req.subcategory().isBlank()) {
+            fallbackKeywords.add(req.subcategory().trim());
+        }
+        if (req.manufacturer() != null && !req.manufacturer().isBlank() && req.nameProduct() != null) {
+            fallbackKeywords.add(req.nameProduct().trim() + " " + req.manufacturer().trim());
+        }
+
+        return new GeneratedCharacteristicsDTO(ua, ru, fallbackKeywords, new ArrayList<>(fallbackKeywords));
     }
 
     private String formatMeasure(Integer value, String unit) {

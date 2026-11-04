@@ -22,12 +22,15 @@ public interface ProductMapper {
     @Mapping(target = "salesCount", ignore = true)
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "weightOptions", ignore = true)
+    @Mapping(target = "keywords", expression = "java(sanitizeKeywords(productRequestDTO.keywords()))")
+    @Mapping(target = "keywordsRu", expression = "java(sanitizeKeywords(productRequestDTO.keywordsRu()))")
     Product toEntity(ProductRequestDTO productRequestDTO);
 
     @Mapping(target = "name", expression = "java(getLocalizedName(product))")
     @Mapping(target = "description", expression = "java(getLocalizedDescription(product))")
     @Mapping(target = "characteristics", expression = "java(getLocalizedCharacteristics(product))")
     @Mapping(target = "subcategory", expression = "java(getLocalizedSubcategory(product))")
+    @Mapping(target = "keywords", expression = "java(getLocalizedKeywords(product))")
     @Mapping(target = "isFavorite", constant = "false")
     @Mapping(target = "siblingVariants", ignore = true)
     ProductResponseDTO toResponseDTO(Product product);
@@ -36,6 +39,7 @@ public interface ProductMapper {
     @Mapping(target = "description", expression = "java(getLocalizedDescription(product))")
     @Mapping(target = "characteristics", expression = "java(getLocalizedCharacteristics(product))")
     @Mapping(target = "subcategory", expression = "java(getLocalizedSubcategory(product))")
+    @Mapping(target = "keywords", expression = "java(getLocalizedKeywords(product))")
     @Mapping(target = "isFavorite", source = "isFavorite")
     @Mapping(target = "siblingVariants", ignore = true)
     ProductResponseDTO toResponseDTO(Product product, boolean isFavorite);
@@ -44,6 +48,7 @@ public interface ProductMapper {
     @Mapping(target = "description", expression = "java(getLocalizedDescription(product))")
     @Mapping(target = "characteristics", expression = "java(getLocalizedCharacteristics(product))")
     @Mapping(target = "subcategory", expression = "java(getLocalizedSubcategory(product))")
+    @Mapping(target = "keywords", expression = "java(getLocalizedKeywords(product))")
     @Mapping(target = "isFavorite", source = "isFavorite")
     @Mapping(target = "siblingVariants", source = "variants")
     ProductResponseDTO toResponseDTOWithVariants(Product product, boolean isFavorite, List<ProductVariantDTO> variants);
@@ -58,6 +63,8 @@ public interface ProductMapper {
     @Mapping(target = "creationTime", ignore = true)
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "weightOptions", ignore = true)
+    @Mapping(target = "keywords", expression = "java(sanitizeKeywords(dto.keywords()))")
+    @Mapping(target = "keywordsRu", expression = "java(sanitizeKeywords(dto.keywordsRu()))")
     void updateEntityFromDto(ProductRequestDTO dto, @MappingTarget Product entity);
 
     @Mapping(target = "id", ignore = true)
@@ -123,5 +130,26 @@ public interface ProductMapper {
                     && product.getCharacteristicsRu() != null
                 ? product.getCharacteristicsRu()
                 : product.getCharacteristics();
+    }
+
+    default List<String> getLocalizedKeywords(Product product) {
+        if (product == null) return List.of();
+        if ("ru".equals(LocaleContextHolder.getLocale().getLanguage())
+                && product.getKeywordsRu() != null
+                && !product.getKeywordsRu().isEmpty()) {
+            return product.getKeywordsRu();
+        }
+        return product.getKeywords() != null ? product.getKeywords() : List.of();
+    }
+
+    default List<String> sanitizeKeywords(List<String> keywords) {
+        if (keywords == null || keywords.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        return keywords.stream()
+                .filter(k -> k != null && !k.isBlank())
+                .map(String::trim)
+                .distinct()
+                .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
     }
 }

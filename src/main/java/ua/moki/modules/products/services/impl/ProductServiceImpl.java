@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import ua.moki.infrastructure.storage.dtos.GeneratedKeywordsDTO;
+import ua.moki.infrastructure.storage.dtos.KeywordsGeneratorRequestDTO;
+import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 import ua.moki.modules.analytics.events.SearchPerformedEvent;
 import ua.moki.modules.orders.repositories.CartItemRepository;
 import ua.moki.modules.products.domains.Product;
@@ -53,6 +56,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSpecifications productSpecifications;
     private final FavoriteProductRepository favoriteProductRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final GeminiProductGenerator geminiProductGenerator;
 
     private final Slugify slugify = Slugify.builder().transliterator(true)
             .customReplacement("х", "kh")
@@ -67,7 +71,8 @@ public class ProductServiceImpl implements ProductService {
                               ProductRepository productRepository,
                               ProductSpecifications productSpecifications,
                               FavoriteProductRepository favoriteProductRepository,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher,
+                              GeminiProductGenerator geminiProductGenerator) {
         this.clock = clock;
         this.productMapper = productMapper;
         this.cartItemRepository = cartItemRepository;
@@ -75,6 +80,7 @@ public class ProductServiceImpl implements ProductService {
         this.productSpecifications = productSpecifications;
         this.favoriteProductRepository = favoriteProductRepository;
         this.eventPublisher = eventPublisher;
+        this.geminiProductGenerator = geminiProductGenerator;
     }
 
 
@@ -266,6 +272,58 @@ public class ProductServiceImpl implements ProductService {
                 minMax.get("minPrice"),
                 minMax.get("maxPrice")
         );
+    }
+
+    @Override
+    public BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts(boolean overwrite) {
+        List<Product> allProducts = productRepository.findAll();
+        int total = allProducts.size();
+        int updated = 0;
+        int skipped = 0;
+        int failed = 0;
+
+        for (Product product : allProducts) {
+            boolean hasKeywordsUa = product.getKeywords() != null && !product.getKeywords().isEmpty();
+            boolean hasKeywordsRu = product.getKeywordsRu() != null && !product.getKeywordsRu().isEmpty();
+
+            if (!overwrite && hasKeywordsUa && hasKeywordsRu) {
+                skipped++;
+                continue;
+            }
+
+            try {
+                String categoryTitle = product.getProductCategory() != null
+                        ? product.getProductCategory().getTitle()
+                        : "";
+
+                GeneratedKeywordsDTO generated = geminiProductGenerator.generateKeywords(
+                        new KeywordsGeneratorRequestDTO(
+                                product.getName(),
+                                categoryTitle,
+                                product.getSubcategory(),
+                                product.getManufacturerOfTheProduct()
+                        )
+                );
+
+                if (generated != null && generated.keywords() != null && !generated.keywords().isEmpty()) {
+                    product.setKeywords(productMapper.sanitizeKeywords(generated.keywords()));
+                    List<String> ruList = (generated.keywordsRu() != null && !generated.keywordsRu().isEmpty())
+                            ? generated.keywordsRu()
+                            : generated.keywords();
+                    product.setKeywordsRu(productMapper.sanitizeKeywords(ruList));
+                    productRepository.save(product);
+                    updated++;
+                    log.info("Generated keywords for product id={} ('{}')", product.getId(), product.getName());
+                } else {
+                    failed++;
+                }
+            } catch (Exception e) {
+                failed++;
+                log.error("Failed to generate keywords for product id={}: {}", product.getId(), e.getMessage());
+            }
+        }
+
+        return new BulkKeywordsGenerationResultDTO(total, updated, skipped, failed);
     }
 
     private void publishSearchAnalyticsEvent(ProductSearchRequestDTO request, long totalElements) {

@@ -12,6 +12,7 @@ import ua.moki.infrastructure.storage.dtos.GeneratedKeywordsDTO;
 import ua.moki.infrastructure.storage.dtos.KeywordsGeneratorRequestDTO;
 import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 import ua.moki.modules.products.dtos.BulkKeywordsGenerationResultDTO;
+import ua.moki.modules.products.dtos.BulkKeywordsGenerationStatusDTO;
 import ua.moki.modules.products.services.ProductService;
 
 @RestController
@@ -58,11 +59,18 @@ public class GeminiProductController {
     @PostMapping(value = "/keywords/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @SecurityRequirements()
-    public ResponseEntity<BulkKeywordsGenerationResultDTO> generateKeywordsForAllProducts(
+    public ResponseEntity<BulkKeywordsGenerationStatusDTO> generateKeywordsForAllProducts(
             @RequestParam(defaultValue = "false") boolean overwrite
     ) {
-        BulkKeywordsGenerationResultDTO result = productService.generateKeywordsForAllProducts(overwrite);
-        return ResponseEntity.ok(result);
+        BulkKeywordsGenerationStatusDTO status = productService.startBackgroundKeywordsGeneration(overwrite);
+        return ResponseEntity.ok(status);
+    }
+
+    @GetMapping(value = "/keywords/all/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @SecurityRequirements()
+    public ResponseEntity<BulkKeywordsGenerationStatusDTO> getKeywordsGenerationStatus() {
+        return ResponseEntity.ok(productService.getKeywordsGenerationStatus());
     }
 
 }

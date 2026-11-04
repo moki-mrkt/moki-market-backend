@@ -158,10 +158,16 @@ public class ProductController {
 
     @PostMapping("/keywords/generate-all")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<BulkKeywordsGenerationResultDTO> generateKeywordsForAllProducts(
+    public ResponseEntity<BulkKeywordsGenerationStatusDTO> generateKeywordsForAllProducts(
             @RequestParam(defaultValue = "false") boolean overwrite
     ) {
-        return ResponseEntity.ok(productService.generateKeywordsForAllProducts(overwrite));
+        return ResponseEntity.ok(productService.startBackgroundKeywordsGeneration(overwrite));
+    }
+
+    @GetMapping("/keywords/generate-all/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<BulkKeywordsGenerationStatusDTO> getKeywordsGenerationStatus() {
+        return ResponseEntity.ok(productService.getKeywordsGenerationStatus());
     }
 
 }

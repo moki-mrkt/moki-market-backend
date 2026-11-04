@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -131,61 +132,85 @@ public abstract class AbstractYmlExporter {
     }
 
     protected List<Category> getCategories(ProductCategory category) {
-        String internalId = String.valueOf(category.ordinal() + 1);
-        String rzId = getRzCategoryId(category);
-        String portalId = getPortalCategoryId(category);
-        return List.of(new Category(internalId, rzId, portalId, category.getTitle()));
+        if (category != null) {
+            String internalId = String.valueOf(category.ordinal() + 1);
+            String rzId = getRzCategoryId(category);
+            String portalId = getPortalCategoryId(category);
+            return List.of(new Category(internalId, rzId, portalId, category.getTitle()));
+        }
+
+        return Arrays.stream(ProductCategory.values())
+                .map(cat -> new Category(
+                        String.valueOf(cat.ordinal() + 1),
+                        getRzCategoryId(cat),
+                        getPortalCategoryId(cat),
+                        cat.getTitle()
+                ))
+                .toList();
     }
 
     protected Stream<Offer> getOffersStream(ProductCategory category, String subcategory, OfferMapper mapper) {
-        String internalCategoryId = String.valueOf(category.ordinal() + 1);
+        List<Product> products;
+        if (category != null) {
+            products = (subcategory != null && !subcategory.isBlank())
+                    ? productRepository.findAllByProductCategoryAndSubcategory(category, subcategory, Pageable.unpaged()).getContent()
+                    : productRepository.findAllByProductCategory(category, Pageable.unpaged()).getContent();
+        } else {
+            products = (subcategory != null && !subcategory.isBlank())
+                    ? productRepository.findAll(Pageable.unpaged()).getContent().stream()
+                            .filter(p -> subcategory.equalsIgnoreCase(p.getSubcategory()))
+                            .toList()
+                    : productRepository.findAll(Pageable.unpaged()).getContent();
+        }
 
-        List<Product> products = (subcategory != null && !subcategory.isBlank())
-                ? productRepository.findAllByProductCategoryAndSubcategory(category, subcategory, Pageable.unpaged()).getContent()
-                : productRepository.findAllByProductCategory(category, Pageable.unpaged()).getContent();
+        return products.stream()
+                .filter(product -> product.getAvailability() != ProductAvailability.ARCHIVED)
+                .flatMap(product -> {
+                    String internalCategoryId = product.getProductCategory() != null
+                            ? String.valueOf(product.getProductCategory().ordinal() + 1)
+                            : (category != null ? String.valueOf(category.ordinal() + 1) : "1");
 
-        return products.stream().flatMap(product -> {
-            if (product.getProductType() == ProductType.WEIGHT_BASED
-                    && product.getWeightOptions() != null
-                    && !product.getWeightOptions().isEmpty()) {
+                    if (product.getProductType() == ProductType.WEIGHT_BASED
+                            && product.getWeightOptions() != null
+                            && !product.getWeightOptions().isEmpty()) {
 
-                return product.getWeightOptions().stream()
-                        .filter(opt -> Boolean.TRUE.equals(opt.getIsExported()))
-                        .map(opt -> {
-                            String uniqueId = product.getId() + "-" + opt.getWeightValue();
-                            String weightName = buildWeightName(product.getName(), opt.getWeightValue());
+                        return product.getWeightOptions().stream()
+                                .filter(opt -> Boolean.TRUE.equals(opt.getIsExported()))
+                                .map(opt -> {
+                                    String uniqueId = product.getId() + "-" + opt.getWeightValue();
+                                    String weightName = buildWeightName(product.getName(), opt.getWeightValue());
 
-                            BigDecimal optionPurchasePrice = null;
-                            if (product.getPurchasePrice() != null) {
-                                BigDecimal ratio = BigDecimal.valueOf(opt.getWeightValue())
-                                        .divide(new BigDecimal("1000"), 4, RoundingMode.HALF_UP);
-                                optionPurchasePrice = product.getPurchasePrice().multiply(ratio);
-                            }
+                                    BigDecimal optionPurchasePrice = null;
+                                    if (product.getPurchasePrice() != null) {
+                                        BigDecimal ratio = BigDecimal.valueOf(opt.getWeightValue())
+                                                .divide(new BigDecimal("1000"), 4, RoundingMode.HALF_UP);
+                                        optionPurchasePrice = product.getPurchasePrice().multiply(ratio);
+                                    }
 
-                            return mapper.map(
-                                    product,
-                                    uniqueId,
-                                    weightName,
-                                    opt.getPrice(),
-                                    optionPurchasePrice,
-                                    BigDecimal.valueOf(opt.getWeightValue()),
-                                    "г",
-                                    internalCategoryId
-                            );
-                        });
-            }
+                                    return mapper.map(
+                                            product,
+                                            uniqueId,
+                                            weightName,
+                                            opt.getPrice(),
+                                            optionPurchasePrice,
+                                            BigDecimal.valueOf(opt.getWeightValue()),
+                                            "г",
+                                            internalCategoryId
+                                    );
+                                });
+                    }
 
-            return Stream.of(mapper.map(
-                    product,
-                    String.valueOf(product.getId()),
-                    product.getName(),
-                    product.getPrice(),
-                    product.getPurchasePrice(),
-                    BigDecimal.valueOf(product.getValueOfInitOfMeasure()),
-                    product.getInitOfMeasure(),
-                    internalCategoryId
-            ));
-        });
+                    return Stream.of(mapper.map(
+                            product,
+                            String.valueOf(product.getId()),
+                            product.getName(),
+                            product.getPrice(),
+                            product.getPurchasePrice(),
+                            BigDecimal.valueOf(product.getValueOfInitOfMeasure()),
+                            product.getInitOfMeasure(),
+                            internalCategoryId
+                    ));
+                });
     }
 
     private static String buildWeightName(String baseName, double weightVal) {

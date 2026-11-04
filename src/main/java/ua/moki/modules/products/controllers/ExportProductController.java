@@ -26,7 +26,7 @@ public class ExportProductController {
     @GetMapping(value = "/rozetka", produces = MediaType.APPLICATION_XML_VALUE)
     @PreAuthorize("permitAll()")
     @SecurityRequirements()
-    public ResponseEntity<String> rozetkaCandies(@RequestParam ProductCategory category,
+    public ResponseEntity<String> rozetkaCandies(@RequestParam(required = false) ProductCategory category,
                                                  @RequestParam(required = false) String subcategory) {
         return ResponseEntity.ok(rozetkaExport.generate(category, subcategory));
     }
@@ -34,7 +34,7 @@ public class ExportProductController {
     @GetMapping(value = "/kasta", produces = MediaType.APPLICATION_XML_VALUE)
     @PreAuthorize("permitAll()")
     @SecurityRequirements()
-    public ResponseEntity<String> kastaCandies(@RequestParam ProductCategory category,
+    public ResponseEntity<String> kastaCandies(@RequestParam(required = false) ProductCategory category,
                                                @RequestParam(required = false) String subcategory) {
         return ResponseEntity.ok(kastaExport.generate(category, subcategory));
     }
@@ -42,7 +42,7 @@ public class ExportProductController {
     @GetMapping(value = "/prom", produces = MediaType.APPLICATION_XML_VALUE)
     @PreAuthorize("permitAll()")
     @SecurityRequirements()
-    public ResponseEntity<String> promSweets(@RequestParam ProductCategory category,
+    public ResponseEntity<String> promSweets(@RequestParam(required = false) ProductCategory category,
                                              @RequestParam(required = false) String subcategory) {
         return ResponseEntity.ok(promExport.generate(category, subcategory));
     }

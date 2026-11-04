@@ -76,4 +76,42 @@ class PromExportTest {
         assertThat(xml).contains("<keywords_ua>кеш'ю смажений, купити кеш'ю, горіхи кеш'ю</keywords_ua>");
         assertThat(xml).contains("<keywords>кешью жареный, купить кешью, орехи кешью</keywords>");
     }
+
+    @Test
+    @DisplayName("generate returns all products and categories when category and subcategory are null")
+    void generate_shouldExportAllProductsWhenCategoryIsNull() {
+        PromExport promExport = new PromExport(productRepository, "https://example.com/images/");
+
+        Product nutProduct = new Product();
+        nutProduct.setId(1L);
+        nutProduct.setName("Мигдаль смажений");
+        nutProduct.setSlug("almond-roasted");
+        nutProduct.setProductCategory(ProductCategory.NUTS);
+        nutProduct.setProductType(ProductType.SIMPLE);
+        nutProduct.setPrice(new BigDecimal("350"));
+        nutProduct.setAvailability(ProductAvailability.IN_STOCK);
+        nutProduct.setValueOfInitOfMeasure(500);
+        nutProduct.setInitOfMeasure("г");
+
+        Product fruitProduct = new Product();
+        fruitProduct.setId(2L);
+        fruitProduct.setName("Манго сушене");
+        fruitProduct.setSlug("mango-dried");
+        fruitProduct.setProductCategory(ProductCategory.DRIED_FRUITS);
+        fruitProduct.setProductType(ProductType.SIMPLE);
+        fruitProduct.setPrice(new BigDecimal("220"));
+        fruitProduct.setAvailability(ProductAvailability.IN_STOCK);
+        fruitProduct.setValueOfInitOfMeasure(250);
+        fruitProduct.setInitOfMeasure("г");
+
+        when(productRepository.findAll(Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(nutProduct, fruitProduct)));
+
+        String xml = promExport.generate(null, null);
+
+        assertThat(xml).contains("<name>Мигдаль смажений</name>");
+        assertThat(xml).contains("<name>Манго сушене</name>");
+        assertThat(xml).contains("<category id=\"2\" portal_id=\"104\">Горіхи</category>");
+        assertThat(xml).contains("<category id=\"1\" portal_id=\"23403\">Сухофрукти</category>");
+    }
 }

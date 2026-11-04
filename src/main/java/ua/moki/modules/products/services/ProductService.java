@@ -29,6 +29,10 @@ public interface ProductService {
 
     BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts(boolean overwrite);
 
+    BulkKeywordsGenerationStatusDTO startBackgroundKeywordsGeneration(boolean overwrite);
+
+    BulkKeywordsGenerationStatusDTO getKeywordsGenerationStatus();
+
     default BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts() {
         return generateKeywordsForAllProducts(false);
     }

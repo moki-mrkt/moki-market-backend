@@ -677,6 +677,20 @@ public class ProductServiceImplTest extends BaseIntegrationTest {
         assertThat(response.subcategories()).contains("Манго", "Фініки");
     }
 
+    @Test
+    @DisplayName("getAllProducts and searchProducts match products by keywords stored in jsonb column in PostgreSQL")
+    void searchProducts_shouldMatchByKeywordsInPostgres() {
+        Product p = createBaseProduct("Волоський горіх очищений", new BigDecimal("180.00"));
+        p.setKeywords(List.of("грецькі горіхи", "ядро горіха бабочка"));
+        p.setKeywordsRu(List.of("грецкие орехи", "ядро ореха бабочка"));
+        productRepository.saveAndFlush(p);
+
+        Page<ProductAdminResponseDTO> adminResult = productService.getAllProducts("грецькі", PageRequest.of(0, 10));
+        assertThat(adminResult.getContent())
+                .extracting(ProductAdminResponseDTO::name)
+                .contains("Волоський горіх очищений");
+    }
+
     private Product createBaseProduct(String name, BigDecimal price) {
         Product p = new Product();
         p.setName(name);

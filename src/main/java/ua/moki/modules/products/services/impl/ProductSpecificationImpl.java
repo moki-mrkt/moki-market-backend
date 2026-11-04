@@ -34,14 +34,15 @@ public class ProductSpecificationImpl implements ProductSpecifications {
                 Predicate descRuLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("descriptionRu")), searchSchema);
                 Predicate subcatLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("subcategory")), searchSchema);
                 Predicate subcatRuLike = criteriaBuilder.like(criteriaBuilder.lower(root.get("subcategoryRu")), searchSchema);
-                Predicate keywordsLike = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("keywords").as(String.class)),
-                        searchSchema
+                Expression<String> keywordsText = criteriaBuilder.lower(
+                        criteriaBuilder.function("jsonb_pretty", String.class, root.get("keywords"))
                 );
-                Predicate keywordsRuLike = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("keywordsRu").as(String.class)),
-                        searchSchema
+                Expression<String> keywordsRuText = criteriaBuilder.lower(
+                        criteriaBuilder.function("jsonb_pretty", String.class, root.get("keywordsRu"))
                 );
+
+                Predicate keywordsLike = criteriaBuilder.like(keywordsText, searchSchema);
+                Predicate keywordsRuLike = criteriaBuilder.like(keywordsRuText, searchSchema);
 
                 Expression<Double> nameSimilarity = criteriaBuilder.function(
                         "similarity",
@@ -53,7 +54,7 @@ public class ProductSpecificationImpl implements ProductSpecifications {
                 Expression<Double> keywordsSimilarity = criteriaBuilder.function(
                         "similarity",
                         Double.class,
-                        criteriaBuilder.lower(root.get("keywords").as(String.class)),
+                        keywordsText,
                         criteriaBuilder.literal(searchTerm)
                 );
 

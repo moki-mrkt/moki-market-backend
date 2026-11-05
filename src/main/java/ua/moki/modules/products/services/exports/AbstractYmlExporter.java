@@ -44,6 +44,8 @@ public abstract class AbstractYmlExporter {
     @Transactional(readOnly = true)
     public String generate(ProductCategory category, String subcategory) {
 
+
+
         List<Offer> offers = getOffersStream(category, subcategory, this::mapToOffer).toList();
 
         List<Currency> currencies = List.of(

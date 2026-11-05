@@ -5,7 +5,6 @@ import com.github.slugify.Slugify;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -20,9 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import ua.moki.infrastructure.storage.dtos.GeneratedKeywordsDTO;
-import ua.moki.infrastructure.storage.dtos.KeywordsGeneratorRequestDTO;
-import ua.moki.infrastructure.storage.service.GeminiProductGenerator;
 import ua.moki.modules.analytics.events.SearchPerformedEvent;
 import ua.moki.modules.orders.repositories.CartItemRepository;
 import ua.moki.modules.products.domains.Product;
@@ -44,10 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 @Slf4j
@@ -61,17 +53,6 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSpecifications productSpecifications;
     private final FavoriteProductRepository favoriteProductRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final GeminiProductGenerator geminiProductGenerator;
-    private final Executor taskExecutor;
-
-    private final AtomicBoolean isGeneratingAllKeywords = new AtomicBoolean(false);
-    private final AtomicInteger bgTotalProducts = new AtomicInteger(0);
-    private final AtomicInteger bgProcessedProducts = new AtomicInteger(0);
-    private final AtomicInteger bgUpdatedProducts = new AtomicInteger(0);
-    private final AtomicInteger bgSkippedProducts = new AtomicInteger(0);
-    private final AtomicInteger bgFailedProducts = new AtomicInteger(0);
-    private volatile String bgCurrentProductName = null;
-    private volatile String bgMessage = "Немає активних фонових задач";
 
     private final Slugify slugify = Slugify.builder().transliterator(true)
             .customReplacement("х", "kh")
@@ -86,9 +67,7 @@ public class ProductServiceImpl implements ProductService {
                               ProductRepository productRepository,
                               ProductSpecifications productSpecifications,
                               FavoriteProductRepository favoriteProductRepository,
-                              ApplicationEventPublisher eventPublisher,
-                              GeminiProductGenerator geminiProductGenerator,
-                              @Qualifier("taskExecutor") Executor taskExecutor) {
+                              ApplicationEventPublisher eventPublisher) {
         this.clock = clock;
         this.productMapper = productMapper;
         this.cartItemRepository = cartItemRepository;
@@ -96,8 +75,6 @@ public class ProductServiceImpl implements ProductService {
         this.productSpecifications = productSpecifications;
         this.favoriteProductRepository = favoriteProductRepository;
         this.eventPublisher = eventPublisher;
-        this.geminiProductGenerator = geminiProductGenerator;
-        this.taskExecutor = taskExecutor;
     }
 
 
@@ -289,199 +266,6 @@ public class ProductServiceImpl implements ProductService {
                 minMax.get("minPrice"),
                 minMax.get("maxPrice")
         );
-    }
-
-    @Override
-    public BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts(boolean overwrite) {
-        if (!isGeneratingAllKeywords.compareAndSet(false, true)) {
-            log.warn("Bulk keywords generation is already in progress. Ignoring duplicate request.");
-            throw new IllegalStateException("Процес генерації пошукових запитів для всіх товарів вже виконується.");
-        }
-
-        try {
-            List<Long> productIds = productRepository.findAllProductIds();
-            int total = productIds.size();
-            int updated = 0;
-            int skipped = 0;
-            int failed = 0;
-
-            for (Long productId : productIds) {
-                Product product = productRepository.findById(productId).orElse(null);
-                if (product == null) {
-                    continue;
-                }
-
-                boolean hasKeywordsUa = product.getKeywords() != null && !product.getKeywords().isEmpty();
-                boolean hasKeywordsRu = product.getKeywordsRu() != null && !product.getKeywordsRu().isEmpty();
-
-                if (!overwrite && hasKeywordsUa && hasKeywordsRu) {
-                    skipped++;
-                    continue;
-                }
-
-                try {
-                    String categoryTitle = product.getProductCategory() != null
-                            ? product.getProductCategory().getTitle()
-                            : "";
-
-                    GeneratedKeywordsDTO generated = geminiProductGenerator.generateKeywords(
-                            new KeywordsGeneratorRequestDTO(
-                                    product.getName(),
-                                    categoryTitle,
-                                    product.getSubcategory(),
-                                    product.getManufacturerOfTheProduct()
-                            )
-                    );
-
-                    if (generated != null && generated.keywords() != null && !generated.keywords().isEmpty()) {
-                        List<String> sanitizedUa = productMapper.sanitizeKeywords(generated.keywords());
-                        List<String> ruList = (generated.keywordsRu() != null && !generated.keywordsRu().isEmpty())
-                                ? generated.keywordsRu()
-                                : generated.keywords();
-                        List<String> sanitizedRu = productMapper.sanitizeKeywords(ruList);
-
-                        boolean saved = false;
-                        for (int attempt = 0; attempt < 2 && !saved; attempt++) {
-                            try {
-                                Product fresh = productRepository.findById(productId).orElse(null);
-                                if (fresh == null) break;
-                                fresh.setKeywords(sanitizedUa);
-                                fresh.setKeywordsRu(sanitizedRu);
-                                productRepository.saveAndFlush(fresh);
-                                saved = true;
-                                updated++;
-                                log.info("Generated keywords for product id={} ('{}')", fresh.getId(), fresh.getName());
-                            } catch (Exception lockEx) {
-                                if (attempt == 1) {
-                                    throw lockEx;
-                                }
-                                log.warn("Optimistic lock conflict for product id={}, retrying with fresh state...", productId);
-                            }
-                        }
-                    } else {
-                        failed++;
-                    }
-                } catch (Exception e) {
-                    failed++;
-                    log.error("Failed to generate keywords for product id={}: {}", productId, e.getMessage());
-                }
-            }
-
-            return new BulkKeywordsGenerationResultDTO(total, updated, skipped, failed);
-        } finally {
-            isGeneratingAllKeywords.set(false);
-        }
-    }
-
-    @Override
-    public BulkKeywordsGenerationStatusDTO getKeywordsGenerationStatus() {
-        return new BulkKeywordsGenerationStatusDTO(
-                isGeneratingAllKeywords.get(),
-                bgTotalProducts.get(),
-                bgProcessedProducts.get(),
-                bgUpdatedProducts.get(),
-                bgSkippedProducts.get(),
-                bgFailedProducts.get(),
-                bgCurrentProductName,
-                bgMessage
-        );
-    }
-
-    @Override
-    public BulkKeywordsGenerationStatusDTO startBackgroundKeywordsGeneration(boolean overwrite) {
-        if (!isGeneratingAllKeywords.compareAndSet(false, true)) {
-            return getKeywordsGenerationStatus();
-        }
-
-        List<Long> productIds = productRepository.findAllProductIds();
-        bgTotalProducts.set(productIds.size());
-        bgProcessedProducts.set(0);
-        bgUpdatedProducts.set(0);
-        bgSkippedProducts.set(0);
-        bgFailedProducts.set(0);
-        bgCurrentProductName = null;
-        bgMessage = "Генерацію пошукових запитів розпочато у фоновому режимі";
-
-        CompletableFuture.runAsync(() -> {
-            try {
-                for (Long productId : productIds) {
-                    Product product = productRepository.findById(productId).orElse(null);
-                    if (product == null) {
-                        bgProcessedProducts.incrementAndGet();
-                        continue;
-                    }
-
-                    bgCurrentProductName = product.getName();
-
-                    boolean hasKeywordsUa = product.getKeywords() != null && !product.getKeywords().isEmpty();
-                    boolean hasKeywordsRu = product.getKeywordsRu() != null && !product.getKeywordsRu().isEmpty();
-
-                    if (!overwrite && hasKeywordsUa && hasKeywordsRu) {
-                        bgSkippedProducts.incrementAndGet();
-                        bgProcessedProducts.incrementAndGet();
-                        continue;
-                    }
-
-                    try {
-                        String categoryTitle = product.getProductCategory() != null
-                                ? product.getProductCategory().getTitle()
-                                : "";
-
-                        GeneratedKeywordsDTO generated = geminiProductGenerator.generateKeywords(
-                                new KeywordsGeneratorRequestDTO(
-                                        product.getName(),
-                                        categoryTitle,
-                                        product.getSubcategory(),
-                                        product.getManufacturerOfTheProduct()
-                                )
-                        );
-
-                        if (generated != null && generated.keywords() != null && !generated.keywords().isEmpty()) {
-                            List<String> sanitizedUa = productMapper.sanitizeKeywords(generated.keywords());
-                            List<String> ruList = (generated.keywordsRu() != null && !generated.keywordsRu().isEmpty())
-                                    ? generated.keywordsRu()
-                                    : generated.keywords();
-                            List<String> sanitizedRu = productMapper.sanitizeKeywords(ruList);
-
-                            boolean saved = false;
-                            for (int attempt = 0; attempt < 2 && !saved; attempt++) {
-                                try {
-                                    Product fresh = productRepository.findById(productId).orElse(null);
-                                    if (fresh == null) break;
-                                    fresh.setKeywords(sanitizedUa);
-                                    fresh.setKeywordsRu(sanitizedRu);
-                                    productRepository.saveAndFlush(fresh);
-                                    saved = true;
-                                    bgUpdatedProducts.incrementAndGet();
-                                    log.info("[Background] Generated keywords for product id={} ('{}')", fresh.getId(), fresh.getName());
-                                } catch (Exception lockEx) {
-                                    if (attempt == 1) throw lockEx;
-                                    log.warn("Optimistic lock conflict for product id={}, retrying...", productId);
-                                }
-                            }
-                        } else {
-                            bgFailedProducts.incrementAndGet();
-                        }
-                    } catch (Exception e) {
-                        bgFailedProducts.incrementAndGet();
-                        log.error("[Background] Failed to generate keywords for product id={}: {}", productId, e.getMessage());
-                    } finally {
-                        bgProcessedProducts.incrementAndGet();
-                    }
-                }
-                bgMessage = String.format("Фонову генерацію завершено: оновлено %d, пропущено %d, помилок %d",
-                        bgUpdatedProducts.get(), bgSkippedProducts.get(), bgFailedProducts.get());
-                log.info("[Background] Bulk keywords generation completed. {}", bgMessage);
-            } catch (Exception e) {
-                bgMessage = "Помилка фонової генерації: " + e.getMessage();
-                log.error("[Background] Unexpected error in bulk keywords generation", e);
-            } finally {
-                bgCurrentProductName = null;
-                isGeneratingAllKeywords.set(false);
-            }
-        }, taskExecutor);
-
-        return getKeywordsGenerationStatus();
     }
 
     private void publishSearchAnalyticsEvent(ProductSearchRequestDTO request, long totalElements) {

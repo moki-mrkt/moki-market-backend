@@ -39,7 +39,4 @@ public interface ProductRepository extends
 
     boolean existsBySlug(String slug);
 
-    @Query("SELECT p.id FROM Product p ORDER BY p.id ASC")
-    List<Long> findAllProductIds();
-
 }

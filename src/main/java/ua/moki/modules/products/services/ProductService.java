@@ -26,15 +26,4 @@ public interface ProductService {
     Page<ProductResponseDTO> getBestsellers(int page, int size);
 
     SearchResponse searchProducts(ProductSearchRequestDTO request, Pageable pageable);
-
-    BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts(boolean overwrite);
-
-    BulkKeywordsGenerationStatusDTO startBackgroundKeywordsGeneration(boolean overwrite);
-
-    BulkKeywordsGenerationStatusDTO getKeywordsGenerationStatus();
-
-    default BulkKeywordsGenerationResultDTO generateKeywordsForAllProducts() {
-        return generateKeywordsForAllProducts(false);
-    }
-
 }
